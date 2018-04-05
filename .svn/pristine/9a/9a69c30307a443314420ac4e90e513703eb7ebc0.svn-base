@@ -1,0 +1,90 @@
+package com.qbao.sdk.server.filter.login;
+
+import java.io.IOException;
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import com.qbao.sdk.server.login.domain.request.AuthorizationRequest;
+import com.qbao.sdk.server.metadata.entity.login.OauthAccessRecordEntity;
+import com.qbao.sdk.server.service.login.OauthAccessRecordService;
+import com.qbao.sdk.server.util.DateUtils;
+
+public class OauthAccessRecordFilter implements Filter {
+	private static final Logger LOGGER = LoggerFactory.getLogger(OauthAccessRecordFilter.class);
+
+	private ApplicationContext ctx;
+
+	private OauthAccessRecordService oauthAccessRecordService;
+
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
+		chain.doFilter(request, response);
+
+		try {
+			HttpServletRequest httpRequest = (HttpServletRequest) request;
+			OauthAccessRecordEntity accessRecord = new OauthAccessRecordEntity();
+			if (null != httpRequest.getAttribute("authorizationRequest")) {
+				AuthorizationRequest authorizationRequest = (AuthorizationRequest) httpRequest
+						.getAttribute("authorizationRequest");
+				accessRecord.setClientId(authorizationRequest.getClientId());
+
+				if (null != authorizationRequest.getUser()) {
+					accessRecord.setUserName(authorizationRequest.getUser().getUsername());
+					accessRecord.setUserId(authorizationRequest.getUser().getUserId());
+				} else {
+					//accessRecord.setUserName(request.getParameter("loginName"));
+					// 用户校验通过后会存放user信息，若不存在，不记录用户访问记录
+					return;
+				}
+				accessRecord.setTokenId(authorizationRequest.getTokenId());
+
+				accessRecord.setAccessType(authorizationRequest.getAccessType());
+			} else {
+				return;
+			}
+
+			if (null != httpRequest.getAttribute("result")) {
+				accessRecord.setResult((String) httpRequest.getAttribute("result"));
+			}
+
+			accessRecord.setRequestUrl(httpRequest.getRequestURI());
+			if (httpRequest.getRequestURI().indexOf("/sdklogin/v10/getLoginToken") != -1) {
+				accessRecord.setRequestUrlType(1);
+			}
+			else
+			{
+				accessRecord.setRequestUrlType(2);
+			}
+				
+			accessRecord.setCurMonth(DateUtils.getCurDateFormatStr(DateUtils.DEFAULT_CUR_MONTH_FORMAT));
+			oauthAccessRecordService.addOauthAccessRecord(accessRecord);
+		} catch (Exception e) {
+			LOGGER.error("录入访问记录异常:", e);
+		}
+	}
+
+	@Override
+	public void destroy() {
+
+	}
+
+	@Override
+	public void init(FilterConfig filterConfig) throws ServletException {
+		if (ctx == null) {
+			ctx = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext());
+			oauthAccessRecordService = (OauthAccessRecordService) ctx.getBean("oauthAccessRecordService");
+		}
+	}
+}

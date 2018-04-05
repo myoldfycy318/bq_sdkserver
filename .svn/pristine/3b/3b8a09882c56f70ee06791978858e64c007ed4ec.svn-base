@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qbao.sdk.server.metadata.dao.mapper.pay.PayConfigMapper">
+	
+	<resultMap type="com.qbao.sdk.server.metadata.entity.pay.PayConfigEntity" id="PayConfigResultMap">
+		<id property="configId" jdbcType="INTEGER" column="config_id" />
+		<result property="appCode" jdbcType="VARCHAR" column="app_code" />
+		<result property="qbbFlag" jdbcType="TINYINT" column="qbb_flag" />
+		<result property="bqFlag" jdbcType="TINYINT" column="bq_flag" />
+		<result property="delFlag" jdbcType="TINYINT" column="del_flag" />
+		<result property="certifiedStatus" jdbcType="TINYINT" column="certified_status" />
+		<result property="settlePeriod" jdbcType="TINYINT" column="settle_period" />
+		<result property="qbbRate" jdbcType="DECIMAL" column="qbb_rate" />
+		<result property="bqRate" jdbcType="DECIMAL" column="bq_rate" />
+		<result property="remark" jdbcType="VARCHAR" column="remark" />
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+		pay.config_id,
+		pay.app_code,
+		pay.qbb_flag,
+		pay.bq_flag,
+		pay.del_flag,
+		pay.certified_status,
+		pay.settle_period,
+		pay.qbb_rate,
+		pay.bq_rate,
+		pay.remark
+	</sql>
+	
+	<!-- 更新支付配置删除状态为  1-->
+	<update id="deleteByAppCode" parameterType="string">
+		update open_pay_config set del_flag = 1
+		where app_code = #{appCode}
+	</update>
+
+	<!-- 新增支付配置 -->
+	<insert id="insertPayConfig" parameterType="com.qbao.sdk.server.metadata.entity.pay.PayConfigEntity">
+		insert into open_pay_config(
+			app_code,
+			qbb_flag,
+			bq_flag,
+			del_flag,
+			certified_status,
+			settle_period,
+			qbb_rate,
+			bq_rate,
+			remark,
+			create_time
+			)
+		values(
+			#{entity.appCode},
+			#{entity.qbbFlag},
+			#{entity.bqFlag},
+			#{entity.delFlag},
+			#{entity.certifiedStatus},
+			#{entity.settlePeriod},
+			#{entity.qbbRate},
+			#{entity.bqRate},
+			#{entity.remark},
+			now()
+			)
+	</insert>
+	
+	<!-- 根据应用编码查询 支付配置信息 -->
+	<select id="queryByAppCode" resultMap="PayConfigResultMap">
+		select 
+			<include refid="Base_Column_List" />
+		from open_pay_config pay
+		where app_code=#{appCode} and del_flag=0
+	</select>
+	
+</mapper>

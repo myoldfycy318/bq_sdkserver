@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qbao.sdk.server.metadata.dao.mapper.AppVerStatusMapper">
+	
+	<select id="query" resultType="AppVerStatusEntity">
+		select app_id appId, app_code appCode, app_name appName, app_ver appVer, status from sdk_app_ver_status
+		<where>
+			<if test="entity.appId != 0">
+				and app_id=#{entity.appId}
+			</if>
+			<if test="entity.appCode != null">
+				and app_code=#{entity.appCode}
+			</if>
+			<if test="entity.appName != null">
+				and app_name like concat('%', #{entity.appName}, '%')
+			</if>
+			<if test="entity.appVer != null">
+				and app_ver=#{entity.appVer}
+			</if>
+		</where>
+		order by app_id, create_time desc limit #{p.start}, #{p.pageSize};
+	</select>
+
+	<insert id="add">
+		insert into sdk_app_ver_status (app_id, app_code, app_name, app_ver, status, create_time, update_time)
+			values (#{appId}, #{appCode}, #{appName}, #{appVer}, #{status}, now(), now());
+	</insert>
+	
+	<update id="update" parameterType="AppVerStatusEntity">
+		update sdk_app_ver_status set status=#{status}, update_time=now()
+		<where>
+			<if test="appId != 0">
+				and app_id=#{appId}
+			</if>
+			<if test="appCode != null">
+				and app_code=#{appCode}
+			</if>
+			<if test="appName != null">
+				and app_name like concat('%', #{appName}, '%')
+			</if>
+			<if test="appVer != null">
+				and app_ver=#{appVer}
+			</if>
+		</where>
+	</update>
+	
+	<delete id="delete"  parameterType="AppVerStatusEntity">
+		delete from sdk_app_ver_status
+		<where>
+			<if test="appId != 0">
+				and app_id=#{appId}
+			</if>
+			<if test="appCode != null">
+				and app_code=#{appCode}
+			</if>
+			<if test="appName != null">
+				and app_name like concat('%', #{appName}, '%')
+			</if>
+			<if test="appVer != null">
+				and app_ver=#{appVer}
+			</if>
+		</where>
+	</delete>
+	
+	<select id="queryCount" resultType="int">
+		select count(*) from
+		sdk_app_ver_status
+		<where>
+			<if test="appId != 0">
+				and app_id=#{appId}
+			</if>
+			<if test="appCode != null">
+				and app_code=#{appCode}
+			</if>
+			<if test="appName != null">
+				and app_name like concat('%', #{appName}, '%')
+			</if>
+			<if test="appVer != null">
+				and app_ver=#{appVer}
+			</if>
+		</where>
+	</select>
+</mapper>

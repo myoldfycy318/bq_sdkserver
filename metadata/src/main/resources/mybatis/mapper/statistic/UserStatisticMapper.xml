@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qbao.sdk.server.metadata.dao.mapper.statistic.UserStatisticMapper">
+	
+	<resultMap type="com.qbao.sdk.server.metadata.entity.statistic.AppUserDayStatisticInfo" id="dayStatistic">
+		<result property="merchantCode" jdbcType="VARCHAR" column="merchant_code" />   
+		<result property="appCode" jdbcType="VARCHAR" column="app_code" />   
+		<result property="date" jdbcType="CHAR" column="col_date" />   
+		<result property="registerUsersSum" jdbcType="INTEGER" column="register_users_sum" />  
+		<result property="loginUsersSum" jdbcType="INTEGER" column="login_users_sum" />  
+		<result property="usersSum" jdbcType="INTEGER" column="users_sum" />  
+	
+	</resultMap>
+	
+	<resultMap type="com.qbao.sdk.server.metadata.entity.statistic.AppDownloadStatisticInfo" id="appDownloadStatisticInfo">
+		<result property="merchantCode" jdbcType="VARCHAR" column="merchant_code" />
+		<result property="merchantName" jdbcType="VARCHAR" column="merchant_name" />   
+		<result property="appCode" jdbcType="VARCHAR" column="app_code" />
+		<result property="appName" jdbcType="VARCHAR" column="app_name" /> 
+		<result property="appSource" jdbcType="VARCHAR" column="app_source" /> 
+		<result property="dateCol" jdbcType="VARCHAR" column="col_date" />   
+		<result property="userCounts" jdbcType="INTEGER" column="download_user_count" />  
+		<result property="downTimes" jdbcType="INTEGER" column="download_count" />  
+		<result property="payUserCount" jdbcType="INTEGER" column="pay_user_count" />  
+		<result property="payCount" jdbcType="INTEGER" column="pay_count" /> 
+		<result column="pay_rate" property="payRate" jdbcType="DECIMAL" />
+	    <result column="arpu" property="arpu" jdbcType="DECIMAL" />
+	    <result column="arppu" property="arppu" jdbcType="DECIMAL" /> 
+	    <result column="qbb_flow" property="qbbFlow"  jdbcType="BIGINT" /> 
+		<result column="bq_flow" property="bqFlow" jdbcType="BIGINT" />
+	    <result column="qbb_cash" property="qbbCash" jdbcType="DECIMAL" />
+	    <result column="bq_cash" property="bqCash" jdbcType="DECIMAL" /> 
+		<result column="cash_sum" property="cashSum" jdbcType="DECIMAL" /> 
+	</resultMap>
+	<insert id="saveAppUserDayStatistic">
+		insert into sdk_users_daystatistic (merchant_code, app_code, col_date, register_users_sum, login_users_sum, users_sum, create_time)
+			values (#{dayStatisticInfo.merchantCode}, #{dayStatisticInfo.appCode}, #{dayStatisticInfo.date}, #{dayStatisticInfo.registerUsersSum},
+			 #{dayStatisticInfo.loginUsersSum}, #{dayStatisticInfo.usersSum}, now());
+	</insert>
+	<!-- 按日统计应用的新增用户数 -->
+	<select id="countAppDayRegisteUsers" resultType="dayStatistic">
+
+		 
+	select app_code appCode, count(*) registerUsersSum from ${tableName} t where t.register_date=#{dateStr} group by t.app_code;
+		
+	</select>
+
+	<!-- 按日统计商家下的所有应用的新增用户数 -->
+	<select id="countMerchantDayRegisteUsers" resultType="dayStatistic">
+		
+	select merchant_code merchantCode, count(distinct user_id) registerUsersSum from ${tableName} t where t.register_date=#{dateStr}
+	 group by t.merchant_code;
+	 
+		
+	</select>
+	
+	<!-- 按日运营统计所有商家下应用的新增用户数 -->
+	<select id="statisticRegisterUsers" resultType="com.qbao.sdk.server.metadata.entity.statistic.RegisterUser">
+				
+	
+	select DISTINCT user_id as userId from (select DISTINCT user_id from sdk_register_users${tableNameLine}0 where register_date=#{dateStr} 
+		UNION select DISTINCT user_id from sdk_register_users${tableNameLine}1 where register_date=#{dateStr}
+		UNION select DISTINCT user_id from sdk_register_users${tableNameLine}2 where register_date=#{dateStr}
+		UNION select DISTINCT user_id from sdk_register_users${tableNameLine}3 where register_date=#{dateStr}
+		UNION select DISTINCT user_id from sdk_register_users${tableNameLine}4 where register_date=#{dateStr}
+		UNION select DISTINCT user_id from sdk_register_users${tableNameLine}5 where register_date=#{dateStr}
+		UNION select DISTINCT user_id from sdk_register_users${tableNameLine}6 where register_date=#{dateStr}
+		UNION select DISTINCT user_id from sdk_register_users${tableNameLine}7 where register_date=#{dateStr}
+		UNION select DISTINCT user_id from sdk_register_users${tableNameLine}8 where register_date=#{dateStr}
+		UNION select DISTINCT user_id from sdk_register_users${tableNameLine}9 where register_date=#{dateStr} ) as ru;
+	</select>
+	<!-- 按日统计应用的登陆用户数-->
+	<select id="countAppDayLoginUsers" resultType="dayStatistic">
+		select ar.client_id appCode, count(distinct ar.user_id) loginUsersSum from oauth_access_record${monthStr} ar where ar.result='1' and ar.access_time>=#{dateStr} and  ar.access_time&lt;concat(#{dateStr}, ' 24:00:00') and ar.request_url_type=2
+		  group by ar.client_id;
+		
+	</select>
+	
+	<!-- 按日统计商家下的所有应用的登陆用户数-->
+	<select id="countMerchantDayLoginUsers" resultType="dayStatistic">
+		select m.merchant_code merchantCode, count(distinct ar.user_id) loginUsersSum from oauth_access_record${monthStr} ar, open_merchant m  where ar.result='1' and ar.access_time>=#{dateStr} and  ar.access_time&lt;concat(#{dateStr}, ' 24:00:00') and ar.request_url_type=2
+		 and ar.client_id=m.app_code
+		  group by m.merchant_code;
+		
+	</select>
+	<!-- 按日运营统计所有商家下应用的登陆用户数-->
+	<select id="countAllDayLoginUsers" resultType="dayStatistic">
+		select count(distinct ar.user_id) loginUsersSum from oauth_access_record${monthStr} ar  where ar.result='1' and ar.access_time>=#{dateStr} and  ar.access_time&lt;concat(#{dateStr}, ' 24:00:00') and ar.request_url_type=2;
+		
+	</select>
+
+	<!-- 新注册登陆的用户存到注册用户表中，便于统计 -->
+	<insert id="insertRegisteUser">
+		insert into ${tableName} (merchant_code, app_code, user_id, register_date, register_time, create_time)
+			select m.merchant_code, ar.client_id app_code, ar.user_id, date(ar.access_time) register_date, time(min(ar.access_time)) register_time, now() create_time from oauth_access_record${monthStr} ar, open_merchant m 
+			where ar.result='1' and ar.access_time>=#{dateStr} and  ar.access_time&lt;#{endDateStr} and ar.request_url_type=2 and ar.client_id=m.app_code 
+			and m.merchant_user_id%100=#{postfix}
+			and not exists (select 1 from ${tableName} ru where ru.app_code=ar.client_id and ru.user_id=ar.user_id)
+			 group by m.merchant_code, ar.client_id, ar.user_id;
+	</insert>
+	
+	<!-- 查询用户统计数据，某个日期范围内 -->
+	<select id="queryRangeUserStatisticInfo"  resultMap="dayStatistic">
+		select merchant_code, app_code, col_date, register_users_sum, login_users_sum, users_sum from sdk_users_daystatistic
+		where 
+			col_date&gt;=#{fromDate} and col_date&lt;=#{toDate}
+			 <choose>
+			 	<when test="appCode != 'A0000000'">
+			 		and app_code=#{appCode}
+			 	</when>
+			 	<otherwise>
+			 		and merchant_code=#{merchantCode} and app_code=#{appCode};
+			 	</otherwise>
+			 </choose>
+			
+	</select>
+
+	<!-- 按月统计应用的登陆用户数-->
+	<select id="countAppMonthLoginUsers" resultType="dayStatistic">
+		select ar.client_id appCode, count(distinct ar.user_id) loginUsersSum from oauth_access_record${monthStr} ar where ar.result='1' and ar.access_time&lt;concat(#{dateStr}, ' 24:00:00') and ar.request_url_type=2
+		  group by ar.client_id;
+		
+	</select>
+	
+	<!-- 按月统计商家下的所有应用的登陆用户数-->
+	<select id="countMerchantMonthLoginUsers" resultType="dayStatistic">
+		select m.merchant_code merchantCode, count(distinct ar.user_id) loginUsersSum from oauth_access_record${monthStr} ar, open_merchant m  where ar.result='1' and ar.access_time&lt;concat(#{dateStr}, ' 24:00:00') and ar.request_url_type=2
+		 and ar.client_id=m.app_code
+		  group by m.merchant_code;
+		
+	</select>
+	<!-- 按月运营统计所有商家下应用的登陆用户数-->
+	<select id="countAllMonthLoginUsers" resultType="dayStatistic">
+		select count(distinct ar.user_id) loginUsersSum from oauth_access_record${monthStr} ar  where ar.result='1' and ar.access_time&lt;concat(#{dateStr}, ' 24:00:00') and ar.request_url_type=2;
+		
+	</select>
+	
+	<!--  -->
+	<insert id="insertAppDownloadStatisticInfo">
+		insert into sdk_appdownload_statistic (merchant_code, app_code, col_date, download_user_count, download_count, pay_user_count, pay_count, create_time,
+		merchant_name, app_name, app_source,pay_rate, arpu, arppu, qbb_flow, bq_flow, qbb_cash, bq_cash, cash_sum)
+		values (#{info.merchantCode}, #{info.appCode}, #{info.dateCol}, #{info.userCounts}, #{info.downTimes}, #{info.payUserCount}, #{info.payCount}, now(),
+		#{info.merchantName}, #{info.appName}, #{info.appSource}, #{info.payRate}, #{info.arpu}, #{info.arppu},
+		#{info.qbbFlow}, #{info.bqFlow}, #{info.qbbCash}, #{info.bqCash}, #{info.cashSum});
+
+	</insert>
+	
+	<select id="queryAppDownloadStatisticInfo" resultMap="appDownloadStatisticInfo">
+		select merchant_code, merchant_name, app_code, app_name, app_source, download_user_count, download_count, pay_user_count, pay_count, pay_rate, arpu, arppu
+		, qbb_flow, bq_flow, qbb_cash, bq_cash, cash_sum
+		from sdk_appdownload_statistic t
+		where col_date=#{dateCol}
+			<if test="appCode != null">
+				and app_code=#{appCode}
+			</if>
+			<if test="merchantCode!='M0000000'">
+				and merchant_code=#{merchantCode}
+			</if>
+
+		<if test="isMonth !=null ">
+			and create_time=(select max(create_time) from sdk_appdownload_statistic t2
+				 where col_date=#{dateCol} and t.app_code=t2.app_code )
+		</if> <!-- 月份时有重复数据，需要取最新的   -->
+		 
+		order by app_code asc;
+	</select>
+	
+	<!--  查询某天的应用下载统计数据-->
+	<select id="queryDayAppDownloadStatistic"  resultMap="appDownloadStatisticInfo">
+		SELECT  merchant_code, merchant_name, app_code, app_name, app_source, download_user_count, download_count, pay_user_count, pay_count,pay_rate, arpu, arppu
+		, qbb_flow, bq_flow, qbb_cash, bq_cash, cash_sum
+		 FROM `sdk_appdownload_statistic` t where t.app_code=#{appCode} and t.col_date=#{date} limit 1;
+	</select>
+	<!--  查询某个时期段的应用下载统计数据-->
+	<select id="queryDayRangeAppDownloadStatistic"  resultMap="appDownloadStatisticInfo">
+		SELECT  merchant_code, merchant_name, app_code, app_name, app_source, download_user_count, download_count, pay_user_count, pay_count,pay_rate, arpu, arppu
+		, qbb_flow, bq_flow, qbb_cash, bq_cash, cash_sum,col_date
+		 FROM `sdk_appdownload_statistic` t where t.app_code=#{appCode} 
+		and t.col_date>=#{fromDate} and t.col_date&lt;=#{toDate} and t.col_date!=left(#{toDate},6);
+	</select>
+	
+	<!-- 查询<=给定日期的最近一次用户统计数据 （按日）-->
+	<select id="getRecentStatisticInfo"  resultMap="dayStatistic">
+		select merchant_code, app_code, col_date, register_users_sum, login_users_sum, users_sum from sdk_users_daystatistic
+		where col_date&lt;=#{dateStr}
+			<if test="merchantCode!='M0000000'">
+				and merchant_code=#{merchantCode}
+			</if>
+			 and app_code=#{appCode}
+
+		order by id desc limit 0,1;
+	</select>
+	
+	<insert id="saveAppUserMonthStatistic">
+		insert into sdk_users_loginuser_month (merchant_code, app_code, col_date, register_users_sum, login_users_sum, users_sum, create_time)
+			values (#{dayStatisticInfo.merchantCode}, #{dayStatisticInfo.appCode}, #{dayStatisticInfo.date}, #{dayStatisticInfo.registerUsersSum},
+			 #{dayStatisticInfo.loginUsersSum}, #{dayStatisticInfo.usersSum}, now());
+	</insert>
+	<!-- 查询<=给定月份的最近一次用户统计数据 （按月）-->
+	<select id="queryMonthUserStatisticInfo"  resultMap="dayStatistic">
+		select merchant_code, app_code, col_date, register_users_sum, login_users_sum, users_sum from sdk_users_loginuser_month
+		where col_date&lt;=#{monthStr}
+			
+			<if test="merchantCode!='M0000000'">
+				and merchant_code=#{merchantCode}
+			</if>
+			 and app_code=#{appCode}
+
+		order by id desc limit 0,1;
+	</select>
+	
+	<select id="checkUserFirstLogin" resultType="int">
+		select count(*) from ${tableName} where user_id=#{userId} and register_date&lt;#{date};
+	</select>
+</mapper>

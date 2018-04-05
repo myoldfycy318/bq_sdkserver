@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.qbao.sdk.server.metadata.dao.mapper.login.OauthAccessRecordMapper">
+	
+	 <insert id="add" parameterType="com.qbao.sdk.server.metadata.entity.login.OauthAccessRecordEntity">
+        <![CDATA[ 
+      	insert into oauth_access_record${curMonth}
+      	(access_time,access_type,token_id,client_id,user_name,user_id,result,request_url_type) 
+      	  values(#{accessTime},#{accessType},#{tokenId},#{clientId},#{userName},#{userId},#{result},#{requestUrlType})
+       ]]>
+    </insert>
+    
+</mapper>

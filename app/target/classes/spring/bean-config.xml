@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-3.0.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+        http://www.springframework.org/schema/util 
+        http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+
+	<bean id="payConfig" class="com.qbao.sdk.server.util.PropertiesUtil" init-method="init" >
+		<property name="filePath" value="/pay.properties"/>
+	</bean>
+
+	<bean id="smsUtils" class="com.qbao.sdk.server.util.SMSUtils" />
+	
+	<bean id="readTransValTool" class="com.qbao.sdk.server.web.tools.ReadTransValTool" init-method="init">
+		<property name="fileMap">
+            <map>
+                <entry key="trans2012" value="/valxml/trans2012.xml" />
+                <entry key="trans3011" value="/valxml/trans3011.xml" />
+                <entry key="trans2020" value="/valxml/trans2020.xml" />
+            </map>
+        </property>
+	</bean>
+	
+	<bean id="smsClientConfig" class="com.api.sms.common.config.SMSClientConfig">
+		<property name="url" value="${smscenter.url}" />
+	</bean>
+	
+	
+	<bean id="validateParamsTool" class="com.qbao.sdk.server.web.tools.ValidateParamsTool" />
+	
+	<bean id="loginResultNotifyExecutor" class="com.qbao.sdk.server.util.LoginResultNotifyExecutor" />
+	
+	<bean id="currencyEntity" class="com.qbao.sdk.server.metadata.entity.pay.CurrencyEntity" >
+		<property name="currencyName" value="${currency.name}"/>
+		<property name="unit" value="${currency.unit}"/>
+		<property name="scale" value="${currency.scale}"/>
+	</bean>
+</beans>

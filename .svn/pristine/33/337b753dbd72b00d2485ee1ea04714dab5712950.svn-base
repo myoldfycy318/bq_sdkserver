@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qbao.sdk.server.metadata.dao.mapper.AutoSendBqMapper">
+	
+	<!-- 查询汇总记录总数 -->
+	<select id="getTransConsumeTotal" resultType="java.lang.Integer">
+		select COUNT(DISTINCT pt.app_code,pt.pay_user_id) 
+		from sdk_pay_trans_${seq} pt
+		where pt.status=#{status} and pt.trans_date=#{transDate}
+	</select>
+	
+	<!-- 汇总流水记录 -->
+	<select id="sumTransConsume" resultType="com.qbao.sdk.server.metadata.entity.BqAutoSendEntity">
+		select pt.app_code as appCode,
+			pt.pay_user_id as payUserId,
+			pt.login_name as loginId,
+			pt.trans_date as transDate,
+			sum(pt.account_amount) as accountAmount,
+			sum(pt.bq_account_amount) as bqAccountAmount,
+			om.app_name as appName,
+			pt.member_level as memberLevel
+		from sdk_pay_trans_${seq} pt
+		LEFT JOIN open_merchant om on(pt.app_code = om.app_code)
+		where pt.status=#{status} and pt.trans_date=#{transDate}
+		group by pt.app_code,pt.pay_user_id,member_level
+		order by pt.app_code,pt.pay_user_id,member_level
+		limit #{start},#{size}
+	</select>
+	
+	
+	<!-- 新增 流水记录汇总数据 -->
+	<insert id="insertSumTrans">
+		insert into sdk_bq_auto_send(
+			id,
+			app_code,
+			pay_user_id,
+			login_id,
+			trans_date,
+			account_amount,
+			bq_account_amount,
+			biz_type,
+			biz_desc,
+			status,
+			return_code,
+			return_msg,
+			bq_award,
+			create_time
+			<if test="entity.payTradeNo != null and entity.payTradeNo != ''">
+                ,pay_trade_no
+            </if>
+		) values(
+			 #{entity.id},
+			 #{entity.appCode},
+			 #{entity.payUserId},
+			 #{entity.loginId},
+			 #{entity.transDate},
+			 #{entity.accountAmount},
+			 #{entity.bqAccountAmount},
+			 #{entity.bizType},
+			 #{entity.bizDesc},
+			 #{entity.status},
+			 #{entity.returnCode},
+			 #{entity.returnMsg},
+			 #{entity.bqAward},
+			 now()
+            <if test="entity.payTradeNo != null and entity.payTradeNo != ''">
+                , #{entity.payTradeNo}
+            </if>
+			 )
+	</insert>
+	
+	<!-- 根据id查询数据总量 -->
+	<select id="getTransConsumeById" resultType="java.lang.Integer">
+		SELECT count(1) from sdk_bq_auto_send where id=#{id}
+	</select>
+	
+	
+	
+	<!-- 查询指定天的每个游戏下每个用户宝币消费总数 -->
+	<select id="sumTransConsumeV2" resultType="com.qbao.sdk.server.metadata.entity.BqAutoSendEntity">
+		select pt.app_code as appCode,
+			pt.pay_user_id as payUserId,
+			pt.login_name as loginId,
+			pt.trans_date as transDate,
+			sum(pt.account_amount) as accountAmount,
+			sum(pt.bq_account_amount) as bqAccountAmount,
+			om.app_name as appName
+		from sdk_pay_trans_${seq} pt
+		LEFT JOIN open_merchant om on(pt.app_code = om.app_code)
+		where pt.status=30 and pt.trans_date=#{transDate}
+		group by pt.app_code,pt.pay_user_id
+	</select>
+	
+</mapper>

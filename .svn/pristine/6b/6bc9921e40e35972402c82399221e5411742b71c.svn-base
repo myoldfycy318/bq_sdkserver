@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.qbao.sdk.server.metadata.dao.mapper.statistic.MonthSumMapper" >
+  <resultMap id="BaseResultMap" type="com.qbao.sdk.server.metadata.entity.statistic.SdkMonthSumEntity" >
+    <id column="month_sum_id" property="monthSumId" jdbcType="BIGINT" />
+    <result column="settle_month" property="settleMonth" jdbcType="CHAR" />
+    <result column="merchant_code" property="merchantCode" jdbcType="VARCHAR" />
+    <result column="merchant_name" property="merchantName" jdbcType="VARCHAR" />
+    <result column="app_code" property="appCode" jdbcType="VARCHAR" />
+    <result column="app_name" property="appName" jdbcType="VARCHAR" />
+    <result column="app_source" property="appSource" jdbcType="INTEGER" />
+    <result column="charging_point_code" property="chargingPointCode" jdbcType="VARCHAR" />
+    <result column="charging_point_name" property="chargingPointName" jdbcType="VARCHAR" />
+    <result column="settle_total_amount" property="settleTotalAmount" jdbcType="DECIMAL" />
+    <result column="bb_total_amount" property="bbTotalAmount" jdbcType="DECIMAL" />
+    <result column="bq_tota_amount" property="bqTotaAmount" jdbcType="DECIMAL" />
+    <result column="should_settle_amount" property="shouldSettleAmount" jdbcType="DECIMAL" />
+    <result column="real_settle_amount" property="realSettleAmount" jdbcType="DECIMAL" />
+    <result column="settle_status" property="settleStatus" jdbcType="CHAR" />
+    <result column="settle_date" property="settleDate" jdbcType="CHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="pay_user_count" property="payUserCount" jdbcType="INTEGER" />
+    <result column="pay_count" property="payCount" jdbcType="BIGINT" />
+    <result column="qbb_cash" property="qbbCash" jdbcType="DECIMAL" />
+    <result column="bq_cash" property="bqCash" jdbcType="DECIMAL" />
+    <result column="cash_sum" property="cashSum" jdbcType="DECIMAL" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    month_sum_id, settle_month, merchant_code, merchant_name, app_code, app_name, app_source, 
+    charging_point_code, charging_point_name, settle_total_amount, bb_total_amount, bq_tota_amount, 
+    should_settle_amount, real_settle_amount, settle_status, settle_date, create_time, 
+    update_time, qbb_cash, bq_cash, cash_sum
+  </sql>
+  <select id="selectById" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from sdk_month_sum
+    where month_sum_id = #{monthSumId,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteById" parameterType="java.lang.Integer" >
+    delete from sdk_month_sum
+    where month_sum_id = #{monthSumId,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.qbao.sdk.server.metadata.entity.statistic.SdkMonthSumEntity" >
+    insert into sdk_month_sum
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="monthSumId != null" >
+        month_sum_id,
+      </if>
+      <if test="settleMonth != null" >
+        settle_month,
+      </if>
+      <if test="merchantCode != null" >
+        merchant_code,
+      </if>
+      <if test="merchantName != null" >
+        merchant_name,
+      </if>
+      <if test="appCode != null" >
+        app_code,
+      </if>
+      <if test="appName != null" >
+        app_name,
+      </if>
+      <if test="appSource != null" >
+        app_source,
+      </if>
+      <if test="chargingPointCode != null" >
+        charging_point_code,
+      </if>
+      <if test="chargingPointName != null" >
+        charging_point_name,
+      </if>
+      <if test="settleTotalAmount != null" >
+        settle_total_amount,
+      </if>
+      <if test="bbTotalAmount != null" >
+        bb_total_amount,
+      </if>
+      <if test="bqTotaAmount != null" >
+        bq_tota_amount,
+      </if>
+      <if test="shouldSettleAmount != null" >
+        should_settle_amount,
+      </if>
+      <if test="realSettleAmount != null" >
+        real_settle_amount,
+      </if>
+      <if test="settleStatus != null" >
+        settle_status,
+      </if>
+      <if test="settleDate != null" >
+        settle_date,
+      </if>
+        create_time, update_time,
+      pay_user_count, pay_count, qbb_cash, bq_cash, cash_sum
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="monthSumId != null" >
+        #{monthSumId,jdbcType=INTEGER},
+      </if>
+      <if test="settleMonth != null" >
+        #{settleMonth,jdbcType=CHAR},
+      </if>
+      <if test="merchantCode != null" >
+        #{merchantCode,jdbcType=VARCHAR},
+      </if>
+      <if test="merchantName != null" >
+        #{merchantName,jdbcType=VARCHAR},
+      </if>
+      <if test="appCode != null" >
+        #{appCode,jdbcType=VARCHAR},
+      </if>
+      <if test="appName != null" >
+        #{appName,jdbcType=VARCHAR},
+      </if>
+      <if test="appSource != null" >
+        #{appSource,jdbcType=VARCHAR},
+      </if>
+      <if test="chargingPointCode != null" >
+        #{chargingPointCode,jdbcType=VARCHAR},
+      </if>
+      <if test="chargingPointName != null" >
+        #{chargingPointName,jdbcType=VARCHAR},
+      </if>
+      <if test="settleTotalAmount != null" >
+        #{settleTotalAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="bbTotalAmount != null" >
+        #{bbTotalAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="bqTotaAmount != null" >
+        #{bqTotaAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="shouldSettleAmount != null" >
+        #{shouldSettleAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="realSettleAmount != null" >
+        #{realSettleAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="settleStatus != null" >
+        #{settleStatus,jdbcType=CHAR},
+      </if>
+      <if test="settleDate != null" >
+        #{settleDate,jdbcType=CHAR},
+      </if>
+      now(), now(),
+      #{payUserCount}, #{payCount}, #{qbbCash}, #{bqCash}, #{cashSum}
+    </trim>
+  </insert>
+  <update id="updateById" parameterType="com.qbao.sdk.server.metadata.entity.statistic.SdkMonthSumEntity" >
+    update sdk_month_sum
+    <set >
+      <if test="settleMonth != null" >
+        settle_month = #{settleMonth,jdbcType=CHAR},
+      </if>
+      <if test="merchantCode != null" >
+        merchant_code = #{merchantCode,jdbcType=VARCHAR},
+      </if>
+      <if test="merchantName != null" >
+        merchant_name = #{merchantName,jdbcType=VARCHAR},
+      </if>
+      <if test="appCode != null" >
+        app_code = #{appCode,jdbcType=VARCHAR},
+      </if>
+      <if test="appName != null" >
+        app_name = #{appName,jdbcType=VARCHAR},
+      </if>
+      <if test="appSource != null" >
+        app_source = #{appSource,jdbcType=VARCHAR},
+      </if>
+      <if test="chargingPointCode != null" >
+        charging_point_code = #{chargingPointCode,jdbcType=VARCHAR},
+      </if>
+      <if test="chargingPointName != null" >
+        charging_point_name = #{chargingPointName,jdbcType=VARCHAR},
+      </if>
+      <if test="settleTotalAmount != null" >
+        settle_total_amount = #{settleTotalAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="bbTotalAmount != null" >
+        bb_total_amount = #{bbTotalAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="bqTotaAmount != null" >
+        bq_tota_amount = #{bqTotaAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="shouldSettleAmount != null" >
+        should_settle_amount = #{shouldSettleAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="realSettleAmount != null" >
+        real_settle_amount = #{realSettleAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="settleStatus != null" >
+        settle_status = #{settleStatus,jdbcType=CHAR},
+      </if>
+      <if test="settleDate != null" >
+        settle_date = #{settleDate,jdbcType=CHAR},
+      </if>
+      <if test="createTime != null" >
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null" >
+        update_time = #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where month_sum_id = #{monthSumId,jdbcType=INTEGER}
+  </update>
+  
+  <!-- 月结查询付费用户数 -->
+  <select id="queryMonthPayUserCount" resultType="int">
+  	select count(distinct pay_user_id) from sdk_pay_trans_${month}
+  	where <!-- left(trans_date, 6) = #{month} -->
+		app_code = #{appCode,jdbcType=VARCHAR}
+		AND charging_point_code = #{chargePointCode,jdbcType=VARCHAR}
+		and status=30;
+  </select>
+  	
+	<!-- 月流水统计所有道具的付费用户数和付费次数  -->
+	<select id="statisticMonthAllPayUser" resultType="com.qbao.sdk.server.metadata.entity.statistic.AppDownloadStatisticInfo" >
+	    SELECT
+			
+			app_code appCode,
+			
+			count(distinct pay_user_id) as payUserCount,
+			count(*) as payCount,
+			sum(account_amount) as qbbFlow,
+			sum(bq_account_amount) as bqFlow
+		FROM
+			sdk_pay_trans_${suffix}
+		WHERE
+		app_code = #{appCode,jdbcType=VARCHAR}
+		
+		and status=30;
+	</select>
+  <!-- 根据APPCode查询计费点流水 -->
+  <select id="queryMonthTransByAppcode" resultMap="BaseResultMap">
+	SELECT
+		merchant_code,
+		merchant_name,
+		app_code,
+		app_name,
+		app_source,
+		charging_point_code,
+		charging_point_name,
+		bb_total_amount,
+		bq_tota_amount,
+		settle_total_amount,
+		settle_month,
+		
+		
+		pay_user_count,
+		pay_count, qbb_cash, bq_cash, cash_sum
+	FROM
+		sdk_month_sum
+	WHERE
+		
+	settle_month = #{month,jdbcType=CHAR}
+	<choose>
+		<when test="appCode != null">
+			and app_code = #{appCode,jdbcType=VARCHAR}
+		</when>
+		<when test="merchant_code != 'M0000000'">
+			and  merchant_code = #{merchantCode}
+		</when>
+	</choose>
+  </select>
+  <!-- 根据APPCode查询计费点流水 -->
+  <select id="queryMonthTransSumByAppcode" resultMap="BaseResultMap">
+	SELECT
+		merchant_code,
+		merchant_name,
+		app_code,
+		app_name,
+		app_source,
+
+		sum(bb_total_amount) as bb_total_amount,
+		sum(bq_tota_amount) as bq_tota_amount,
+		
+		
+		
+		
+		<!--    pay_user_count, -->
+		sum(pay_count) as pay_count, sum(qbb_cash) as qbb_cash, sum(bq_cash) as bq_cash, sum(cash_sum) as cash_sum
+	FROM
+		sdk_month_sum
+	WHERE
+		
+	settle_month = #{month,jdbcType=CHAR}
+	<choose>
+		<when test="appCode != null">
+			and app_code = #{appCode,jdbcType=VARCHAR}
+		</when>
+		<when test="merchantCode != 'M0000000'">
+			and  merchant_code = #{merchantCode}
+		</when>
+	</choose>
+	group by merchant_code, merchant_name, app_code, app_name, app_source;
+  </select>	
+  
+</mapper>

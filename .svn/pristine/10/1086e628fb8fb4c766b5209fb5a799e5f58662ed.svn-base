@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.qbao.sdk.server.metadata.dao.mapper.statistic.PayKeepRateMapper" >
+  <resultMap id="BaseResultMap" type="com.qbao.sdk.server.metadata.entity.statistic.PayKeepRate" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="keep_date" property="keepDate" jdbcType="DATE" />
+    <result column="day1" property="day1" jdbcType="VARCHAR" />
+    <result column="day2" property="day2" jdbcType="VARCHAR" />
+    <result column="day3" property="day3" jdbcType="VARCHAR" />
+    <result column="day4" property="day4" jdbcType="VARCHAR" />
+    <result column="day5" property="day5" jdbcType="VARCHAR" />
+    <result column="day6" property="day6" jdbcType="VARCHAR" />
+    <result column="day7" property="day7" jdbcType="VARCHAR" />
+    <result column="pay_user_total" property="payUserTotal" jdbcType="INTEGER" />
+    <result column="app_code" property="appCode" jdbcType="VARCHAR" />
+    <result column="merchant_code" property="merchantCode" jdbcType="VARCHAR" />
+  </resultMap>
+
+  <resultMap id="PayKeepRateBo" type="com.qbao.sdk.server.bo.PayKeepRateBo" >
+    <result column="app_code" property="appCode" jdbcType="VARCHAR" />
+    <result column="keep_date" property="keepDate" jdbcType="DATE" />
+    <result column="day1" property="day1" jdbcType="VARCHAR" />
+    <result column="day2" property="day2" jdbcType="VARCHAR" />
+    <result column="day3" property="day3" jdbcType="VARCHAR" />
+    <result column="day4" property="day4" jdbcType="VARCHAR" />
+    <result column="day5" property="day5" jdbcType="VARCHAR" />
+    <result column="day6" property="day6" jdbcType="VARCHAR" />
+    <result column="day7" property="day7" jdbcType="VARCHAR" />
+    <result column="pay_user_total" property="payUserTotal" jdbcType="INTEGER" />
+  </resultMap>
+
+
+  <select id="countKeepUserNum" resultType="int">
+    SELECT count(DISTINCT pay_user_id) from sdk_pay_trans_${payZoom} a, oauth_access_record${oauthZoom} b where
+    a.app_code=#{appCode} and a.trans_date=#{keepDate}
+    and b.client_id=#{appCode} and b.request_url_type=2 and b.result='1' and b.access_time>=#{yesterday} and  b.access_time&lt;concat(#{yesterday}, ' 24:00:00')
+    and a.pay_user_id=b.user_id and a.status=30
+  </select>
+
+  <insert id="insert">
+    insert into sdk_pay_keep_rate${zoom}
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="record.id != null">
+        id,
+      </if>
+      <if test="record.keepDate != null">
+        keep_date,
+      </if>
+      <if test="record.day1 != null">
+        day1,
+      </if>
+      <if test="record.day2 != null">
+        day2,
+      </if>
+      <if test="record.day3 != null">
+        day3,
+      </if>
+      <if test="record.day4 != null">
+        day4,
+      </if>
+      <if test="record.day5 != null">
+        day5,
+      </if>
+      <if test="record.day6 != null">
+        day6,
+      </if>
+      <if test="record.day7 != null">
+        day7,
+      </if>
+      <if test="record.payUserTotal != null">
+        pay_user_total,
+      </if>
+      <if test="record.appCode != null">
+        app_code,
+      </if>
+      <if test="record.merchantCode != null">
+        merchant_code,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="record.id != null">
+        #{record.id,jdbcType=INTEGER},
+      </if>
+      <if test="record.keepDate != null">
+        #{record.keepDate,jdbcType=DATE},
+      </if>
+      <if test="record.day1 != null">
+        #{record.day1,jdbcType=VARCHAR},
+      </if>
+      <if test="record.day2 != null">
+        #{record.day2,jdbcType=VARCHAR},
+      </if>
+      <if test="record.day3 != null">
+        #{record.day3,jdbcType=VARCHAR},
+      </if>
+      <if test="record.day4 != null">
+        #{record.day4,jdbcType=VARCHAR},
+      </if>
+      <if test="record.day5 != null">
+        #{record.day5,jdbcType=VARCHAR},
+      </if>
+      <if test="record.day6 != null">
+        #{record.day6,jdbcType=VARCHAR},
+      </if>
+      <if test="record.day7 != null">
+        #{record.day7,jdbcType=VARCHAR},
+      </if>
+      <if test="record.payUserTotal != null">
+        #{record.payUserTotal,jdbcType=INTEGER},
+      </if>
+      <if test="record.appCode != null">
+        #{record.appCode,jdbcType=VARCHAR},
+      </if>
+      <if test="record.merchantCode != null">
+        #{record.merchantCode,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+  <select id="selectByAppCodeAndDate" resultMap="BaseResultMap">
+    select * from sdk_pay_keep_rate${zoom} where keep_date=#{keepDate} and app_code=#{appCode}
+  </select>
+
+  <update id="updatePayKeepRate" parameterType="com.qbao.sdk.server.metadata.entity.statistic.PayKeepRate">
+    UPDATE sdk_pay_keep_rate${zoom} set day${i}=#{record.rate}
+    where keep_date=#{record.keepDate} and app_code=#{record.appCode}
+  </update>
+
+  <select id="countPayUserNumber" resultType="int">
+    SELECT count(DISTINCT pay_user_id) from sdk_pay_trans_${zoom} a where
+    app_code=#{appCode} and trans_date=#{keepDate} and status=30
+  </select>
+
+  <select id="getPayKeepRateByAppCode" resultMap="PayKeepRateBo">
+    <![CDATA[
+        SELECT t.merchant_code, t.app_code, t.keep_date, t.pay_user_total, CONCAT(day1,'%') day1, CONCAT(day2,'%') day2, CONCAT(day3,'%') day3, 
+			CONCAT(day4,'%') day4, CONCAT(day5,'%') day5, CONCAT(day6,'%') day6, CONCAT(day7,'%') day7 from sdk_pay_keep_rate t where app_code=#{appCode} and keep_date>=#{start} and
+        keep_date<=#{end}
+    ]]>
+  </select>
+
+	<delete id="del">
+		<![CDATA[
+			delete from sdk_pay_keep_rate where keep_date>=#{startDate} and keep_date<=#{endDate};
+		]]>
+	</delete>
+  </mapper>

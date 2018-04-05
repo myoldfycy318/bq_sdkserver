@@ -1,0 +1,51 @@
+
+#query baoquan
+quan.query.url=http://bq.qbao.com/api/v1/query/uid.html
+#query password exists
+psw.exists.url=http://user.qbao.com/api/isSet/tradePassword/hyip/
+#is bind mobile
+bind.mobile.url=http://user.qbao.com/api/isBind/mobilePhone/hyip/
+#is bind bankcard
+bind.bankcard.url=http://www.qbao.com/interfaceForMerchant/hasBindingBankCard.html
+
+#check password
+pwd.check.url=/api/isCorrect/hyip/tradePassword/%s/%s
+
+account.query.url=http\://hyip.qbao.com/pay-app-server/payquery/queryQbAvailAmount.html
+
+usercentre.url=http://user.qbao.com
+query.user.info=/api/load/user/%s/new
+query.user.mobile=/api/user/%s/get
+
+#zhanghu jiaoyi
+pay.dobiztrade.url=http://pay.qbao.com/paytrade/doBizTrade.html
+
+#baoquan out
+quan.out.url=http://bq.qbao.com/api/v1/by/uid/out.html
+#baoquan trust out
+quan.trust.out.url=http://bq.qbao.com/api/v1/trust/uid/out.html
+#client
+client.private.key=MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAMNSf6Ez8B7mm266zPhoVJo9C1k+5ywDjBWjKgD7yEsxMe4RZx2N0p7Bx/1sUfaSvC2mjoIbQIYUGP2K9/ycbN4Jzq3rx8zkidXSg7FS6NcFeFekS+8O70X5hp2e/qXHwzStpZHHy6EpSF3M8oRuJqIwk8iHgh0uDPE5iWyRiv0PAgMBAAECgYBx6hWBoNb0Tq5sIAoW/lIJOnz56dPNOaxjmiuPM0kXgXOLUx7+f45NBNtsk9YhpmaVgUQv4VD6YZJJnNkQvPJIb71joPYKVYiGUkzFPrUdmUtSPkuWcaGvx3TefmPibL9TjUAY3408Om6YO54oFIWt5y/sMrsdiFRa9Lu5bREwsQJBAO39sZ2aDQqPRieSPHwnyDHlunpSmQ2XzmjtssoTmwo6rAmG/q6lWp5SX4GZ06rW9BKl2Z0VA0ImzdmF+83lflMCQQDSGjxp3oiZI56BHYfIlFCs9f9omUW8KrQXUv5XJVw1Ba9qv8mpAJURrFdAfljYHa+BFWMMuRrqnR/fHjrzE1bVAkEA37g3SmbxUXbjxPkkILYo7Db/eFPDCtMktuCTzIBno1MKPB6JtVU9fU0D+MnI/3T3lbwQeCizmnDt20inL6NHfwJBAKRe8jTBbIyiWTcaK0i5AATQz+i9QNldb1dwDpuPFvxEXmBdex9E3VreQcSrFEa/sraCTON/TZePJYgg1m2lC6ECQQCuAZ8CRsDrEAGyFgVJRDfmoOfPZHHmKgb2OZXVpssPBT17vO3iP0VATbiaZ7yYymcppgBdL6ktcVChYTaCeojA
+#async callback
+async.private.key=MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAMNSf6Ez8B7mm266zPhoVJo9C1k+5ywDjBWjKgD7yEsxMe4RZx2N0p7Bx/1sUfaSvC2mjoIbQIYUGP2K9/ycbN4Jzq3rx8zkidXSg7FS6NcFeFekS+8O70X5hp2e/qXHwzStpZHHy6EpSF3M8oRuJqIwk8iHgh0uDPE5iWyRiv0PAgMBAAECgYBx6hWBoNb0Tq5sIAoW/lIJOnz56dPNOaxjmiuPM0kXgXOLUx7+f45NBNtsk9YhpmaVgUQv4VD6YZJJnNkQvPJIb71joPYKVYiGUkzFPrUdmUtSPkuWcaGvx3TefmPibL9TjUAY3408Om6YO54oFIWt5y/sMrsdiFRa9Lu5bREwsQJBAO39sZ2aDQqPRieSPHwnyDHlunpSmQ2XzmjtssoTmwo6rAmG/q6lWp5SX4GZ06rW9BKl2Z0VA0ImzdmF+83lflMCQQDSGjxp3oiZI56BHYfIlFCs9f9omUW8KrQXUv5XJVw1Ba9qv8mpAJURrFdAfljYHa+BFWMMuRrqnR/fHjrzE1bVAkEA37g3SmbxUXbjxPkkILYo7Db/eFPDCtMktuCTzIBno1MKPB6JtVU9fU0D+MnI/3T3lbwQeCizmnDt20inL6NHfwJBAKRe8jTBbIyiWTcaK0i5AATQz+i9QNldb1dwDpuPFvxEXmBdex9E3VreQcSrFEa/sraCTON/TZePJYgg1m2lC6ECQQCuAZ8CRsDrEAGyFgVJRDfmoOfPZHHmKgb2OZXVpssPBT17vO3iP0VATbiaZ7yYymcppgBdL6ktcVChYTaCeojA
+
+#baoquan status
+bqFlag=1
+#renzheng status
+certifiedStatus=1
+
+#store turntable times
+store.turntable.rule=http://storeba.qbao.com/turntable/times/add
+
+#yingyongshichang ips
+store.ips=192.168.123.17
+
+#store VIP Level
+store.viplevel.url=http://storeba.qbao.com/memberInfo/selectMemberLvByUser
+
+#\u8d27\u5e01\u540d\u79f0
+currency.name=\u4eba\u6c11\u5e01
+#\u8d27\u5e01\u5355\u4f4d
+currency.unit=\u5143
+#\u8d27\u5e01\u6bd4\u4f8b
+currency.scale=100

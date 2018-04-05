@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fields>
+	<field attr="appCode">
+		<text>应用编码</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>40019</code>
+		</check-null>
+		<check-length>
+			<max-length>8</max-length>
+			<code>40020</code>
+		</check-length>
+		<check-exp>
+			<exp>^A[0-9]{7}$</exp>
+			<code>40020</code>
+		</check-exp>
+	</field>
+	
+	<field attr="orderNo">
+		<text>业务流水号</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>40001</code>
+		</check-null>
+		<check-length>
+			<max-length>30</max-length>
+			<code>40002</code>
+		</check-length>
+		<check-exp>
+			<exp>^[0-9]\d*$</exp>
+			<code>40002</code>
+		</check-exp>
+	</field>
+	
+	<field attr="userId">
+		<text>用户ID</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>40021</code>
+		</check-null>
+	</field>
+	
+	<field attr="transAmount">
+		<text>交易金额</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>40007</code>
+		</check-null>
+		<check-length>
+			<max-length>16</max-length>
+			<code>40008</code>
+		</check-length>
+		<check-exp>
+			<exp>^[1-9]\d*$</exp>
+			<code>40008</code>
+		</check-exp>
+	</field>
+	
+	<field attr="appSource">
+		<text>应用渠道</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>20006</code>
+		</check-null>
+		<check-length>
+			<max-length>1</max-length>
+			<code>20007</code>
+		</check-length>
+		<check-exp>
+			<exp>^[0-2]\d*$</exp>
+			<code>20007</code>
+		</check-exp>
+	</field>
+	
+	<field attr="transIntro">
+		<text>交易简介</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>40005</code>
+		</check-null>
+		<check-length>
+			<max-length>128</max-length>
+			<code>40006</code>
+		</check-length>
+	</field>
+	
+	<field attr="payType">
+		<text>支付方式</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>40022</code>
+		</check-null>
+		<check-length>
+			<max-length>1</max-length>
+			<code>40023</code>
+		</check-length>
+		<check-exp>
+			<exp>^[0-1]\d*$</exp>
+			<code>40023</code>
+		</check-exp>
+	</field>
+	
+	
+	<!--callbackUrl -->
+	<field attr="payNotifyUrl">
+		<text>异步通知地址</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>50011</code>
+		</check-null>
+		<check-length>
+			<max-length>256</max-length>
+			<code>50012</code>
+		</check-length>
+	</field>
+	
+	<field attr="signCode">
+		<text>签名信息</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>40015</code>
+		</check-null>
+		<check-length>
+			<max-length>256</max-length>
+			<code>40016</code>
+		</check-length>
+	</field>
+	
+</fields>

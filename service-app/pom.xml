@@ -1,0 +1,64 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <parent>
+    <groupId>com.qbao.sdk.server</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0</version>
+  </parent>
+
+  <artifactId>service-app</artifactId>
+  <packaging>jar</packaging>
+  <name>service-app</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.qbao.sdk.server</groupId>
+      <artifactId>common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.qbao.sdk.server</groupId>
+      <artifactId>metadata</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.qianwang</groupId>
+      <artifactId>smsclient-message</artifactId>
+      <version>${sms.v}</version>
+    </dependency>
+
+	<dependency>
+		<groupId>org.springframework.security</groupId>
+		<artifactId>spring-security-core</artifactId>
+		<version>${security.v}</version>
+	</dependency>
+	
+	<dependency>
+		<groupId>com.github.pagehelper</groupId>
+		<artifactId>pagehelper</artifactId>
+	</dependency>
+
+	<!-- rabbitmq -->
+        <dependency>
+      	  <groupId>com.rabbitmq</groupId>
+	      <artifactId>amqp-client</artifactId>
+	      <version>3.5.1</version>
+	    </dependency>
+	    <dependency>
+			<groupId>org.springframework.amqp</groupId>
+			<artifactId>spring-rabbit</artifactId>
+			<version>1.5.3.RELEASE</version>
+		</dependency>
+
+  </dependencies>
+
+</project>

@@ -1,0 +1,56 @@
+package com.qbao.sdk.server.service.impl.login;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.alibaba.fastjson.JSONObject;
+import com.qbao.sdk.server.service.login.ThridRequestService;
+import com.qbao.sdk.server.util.ApiConnector;
+
+/**
+ * 用户中心接口
+ *
+ */
+@Service("thridRequestService")
+public class ThridRequestServiceImpl implements ThridRequestService {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ThridRequestServiceImpl.class);
+
+	@Value("${user_center_url}")
+	private String USER_CENTER_URL;
+
+	@Override
+	public JSONObject loadUserInfo(String username) {
+		String response = null;
+		JSONObject obj = null;
+		try {
+			response = ApiConnector.get(USER_CENTER_URL + "/api/user/" + username + "/get", null);
+			if (StringUtils.isNotBlank(response)) {
+				obj = JSONObject.parseObject(response);
+			}
+
+		} catch (Exception e) {
+			LOGGER.error(">>>>>>>>UserCenterFacade.getCasUser failed: " + e.getMessage());
+		}
+
+		return obj;
+	}
+
+	@Override
+	public JSONObject getCasUser(String username, String password) {
+		JSONObject jsonObject = null;
+		String result = null;
+		try {
+			result = ApiConnector.get(USER_CENTER_URL + "/api/get/casUser/" + username + "/" + password + "/2", null);
+			if (StringUtils.isNotBlank(result)) {
+				jsonObject = JSONObject.parseObject(result);
+			}
+		} catch (Exception e) {
+			LOGGER.error(">>>>>>>>UserCenterFacade.getCasUser failed: " + e.getMessage());
+		}
+
+		return jsonObject;
+	}
+}

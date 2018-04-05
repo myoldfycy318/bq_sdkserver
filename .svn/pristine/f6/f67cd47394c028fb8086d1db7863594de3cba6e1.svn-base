@@ -1,0 +1,558 @@
+/**
+ * 
+ */
+package com.qbao.sdk.server.service.impl;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.qbao.sdk.server.constants.SendBqStatusEnum;
+import com.qbao.sdk.server.constants.SignConstants;
+import com.qbao.sdk.server.constants.TransStatusEnum;
+import com.qbao.sdk.server.metadata.dao.mapper.AutoSendBqMapper;
+import com.qbao.sdk.server.metadata.entity.BqAutoSendEntity;
+import com.qbao.sdk.server.metadata.entity.PubMessageReqVo;
+import com.qbao.sdk.server.metadata.entity.StoreAwardConfEntity;
+import com.qbao.sdk.server.service.AutoSendBqService;
+import com.qbao.sdk.server.service.StoreAwardConfService;
+import com.qbao.sdk.server.shangsu.PersonTraceResp;
+import com.qbao.sdk.server.shangsu.PersonTradeReqInfo;
+import com.qbao.sdk.server.shangsu.TradeItem;
+import com.qbao.sdk.server.util.*;
+import com.qbao.sdk.server.util.shangsu.YanSuCommonUtil;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
+import javax.annotation.Resource;
+import java.math.BigDecimal;
+import java.util.*;
+
+/**
+ * @author mazhongmin
+ *
+ */
+@Service("autoSendBqService")
+public class AutoSendBqServiceImpl implements AutoSendBqService {
+
+	protected final Logger log = LoggerFactory.getLogger(this.getClass());
+
+	private static final int PAGE_SIZE = 1000;
+
+	@Resource
+	StoreAwardConfService storeAwardConfService;
+
+	@Resource
+	AutoSendBqMapper autoSendBqMapper;
+
+	@Resource
+	PropertiesUtil domainConfig;
+
+	@Resource
+	RedisUtil redisUtil;
+
+	private static final int BIZ_TYPE = 63; // 宝券系统业务类型
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.qbao.opensdk.service.AutoSendBqService#sumConsume()
+	 */
+	@Override
+	public void sumTransConsume() {
+		String transDate = DateUtil.getCurLastDay().replaceAll("-", ""); // 交易日期
+																			// 当前日期前一天
+		String status = TransStatusEnum.PAY_TRANS_SUCCESS.getStatus(); // 流水状态
+																		// 支付成功状态
+
+		int total = autoSendBqMapper.getTransConsumeTotal(transDate.substring(0, 6), status, transDate);
+		// 应用赠券规则
+		Map<String, Object> appRuleMap = new HashMap<String, Object>();
+		// 0 用于比较
+		BigDecimal zero = new BigDecimal(0);
+		/*************** 每次取1000条记录  ************************/
+		for (int start = 0; start < total; start += PAGE_SIZE) {
+			List<BqAutoSendEntity> entityList = autoSendBqMapper.sumTransConsume(transDate.substring(0, 6), status, transDate, start, PAGE_SIZE);
+			if (CollectionUtils.isEmpty(entityList)) {
+				return;
+			}
+			for (BqAutoSendEntity entity : entityList) {
+				// 获取应用赠券规则
+				List<StoreAwardConfEntity> awardList = getRule(appRuleMap, entity.getAppCode());
+				// 一天单个应用下消费的钱宝币数额
+				BigDecimal costQbb = entity.getAccountAmount();
+				// 计算发放宝券数量
+				BigDecimal num = new BigDecimal(0);
+
+				StringBuffer bizDesc = null;
+				StringBuffer activityNames = null;
+				// VIP等级
+				String memberLevel = entity.getMemberLevel();
+				if (awardList != null) {
+					activityNames = new StringBuffer();
+					for (StoreAwardConfEntity award : awardList) {
+						if (StringUtils.isNotEmpty(memberLevel)) {// 用户是会员
+							if (award.getIdMember() == 1 && !memberLevel.equals(award.getMemberLevel())) {
+								continue;
+							}
+
+						} else {// 用户不是会员
+							if (award.getIdMember() == 1) {
+								continue;
+							}
+						}
+
+						if (costQbb.compareTo(award.getAccountAmount()) != -1) {
+							// 检查同一游戏同一用户,是否按会员等级发过奖励
+							boolean flag = redisUtil.hexists(RedisUtil.REDIS_HASH_KEY_HAS_SEND_BQ_USER, entity.getPayUserId() + entity.getAppCode());
+							if (award.getReGrant() == 1 || !flag) {
+								if (StringUtils.isNotBlank(activityNames)) {
+									activityNames.append(SignConstants.SCMICOLON);
+								}
+								activityNames.append(award.getActivityName());
+								num = num.add(award.getBqAward());
+							}
+						}
+					}
+				}
+				// 生成主键id，若id存在，则重新生成
+				String id = GenOrderCode.next();
+				int count = autoSendBqMapper.getTransConsumeById(id);
+				while (count > 0) {
+					id = GenOrderCode.next();
+					count = autoSendBqMapper.getTransConsumeById(id);
+				}
+				entity.setId(id); // 生成唯一主键
+				entity.setStatus(SendBqStatusEnum.AUTO_SEND_NO.getStatus());
+				entity.setBqAward(num);
+				entity.setBizType(BIZ_TYPE);
+
+				// 符合赠送宝券条件 同步宝券系统
+				boolean flag = false; // 用于异常时通知宝券系统回滚
+				if (num.compareTo(zero) == 1) {
+					// 业务摘要
+					bizDesc = new StringBuffer();
+					bizDesc.append("<").append(entity.getAppName()).append(">消费").append(costQbb.intValue()).append("钱宝币赠送").append(num.intValue()).append("钱宝券");
+					entity.setBizDesc(bizDesc.toString());
+
+					flag = sendToBqSystem(entity);
+					bizDesc.append("(活动:").append(activityNames.toString()).append(")");
+					entity.setBizDesc(bizDesc.toString());
+				}
+
+				try {
+					// 插入数据库
+					if (num.compareTo(zero) == 1) {
+						autoSendBqMapper.insertSumTrans(entity);
+						// 储存到redis当前游戏当前用户只发放第一次满足活动的奖励,避免重复发放
+						redisUtil.hset(RedisUtil.REDIS_HASH_KEY_HAS_SEND_BQ_USER, entity.getPayUserId() + entity.getAppCode(), "sended");
+						redisUtil.expire(RedisUtil.REDIS_HASH_KEY_HAS_SEND_BQ_USER, 3600 * 6);
+					}
+				} catch (Exception e) {
+					log.error("插入数据失败:{}", e);
+					e.printStackTrace();
+					// 插入数据异常 通知宝券系统执行回滚操作
+					if (flag) {
+						// rollbackToBqSystem(entity);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * 充反逻辑V2.0  2016-05-30
+	* @Title: sumTransConsumeV2 
+	* @Description: TODO(这里用一句话描述这个方法的作用) 
+	* @param  
+	* @return void    返回类型 
+	* @throws
+	 */
+	@Override
+	public void sumTransConsumeV2() {
+		String transDate = DateUtil.getCurLastDay().replaceAll("-", ""); // 交易日期
+																			// 当前日期前一天
+		// 应用赠券规则
+		Map<String, Object> appRuleMap = new HashMap<String, Object>();
+
+		List<BqAutoSendEntity> entityList = autoSendBqMapper.sumTransConsumeV2(transDate.substring(0, 6), transDate);
+		if (CollectionUtils.isEmpty(entityList)) {
+			return;
+		} else {
+			Set<String> gameSet = new HashSet<String>();
+			for (BqAutoSendEntity bqAutoSendEntity : entityList) {
+				gameSet.add(bqAutoSendEntity.getAppCode());
+			}
+			// 将所有游戏的消费流水区分,并保存到map中,map的key为游戏appcode
+			Map<String, List<BqAutoSendEntity>> gameMap = new HashMap<String, List<BqAutoSendEntity>>();
+			for (BqAutoSendEntity bqAutoSendEntity : entityList) {
+				Iterator<String> it = gameSet.iterator();
+				while (it.hasNext()) {
+					if (bqAutoSendEntity.getAppCode().equals(it.next())) {
+						List<BqAutoSendEntity> list = gameMap.get(bqAutoSendEntity.getAppCode());
+						if (list == null) {
+							list = new ArrayList<BqAutoSendEntity>();
+							list.add(bqAutoSendEntity);
+						} else {
+							list.add(bqAutoSendEntity);
+						}
+						gameMap.put(bqAutoSendEntity.getAppCode(), list);
+					}
+				}
+			}
+
+			Iterator<String> it = gameMap.keySet().iterator();
+			while (it.hasNext()) {
+				String appCode = it.next();
+				// 获取应用赠券规则,已按会员等级由高到低排序,非会员活动排最后
+				List<StoreAwardConfEntity> awardList = getRule(appRuleMap, appCode);
+				if (awardList == null) {
+					continue;// 该游戏无活动,直接跳过
+				}
+				List<BqAutoSendEntity> list = gameMap.get(appCode);
+				for (BqAutoSendEntity bqAutoSendEntity : list) {
+					String userId = bqAutoSendEntity.getPayUserId();
+					// 检查同一游戏同一用户,是否发过奖励
+					boolean flag = redisUtil.hexists(RedisUtil.REDIS_HASH_KEY_HAS_SEND_BQ_USER, userId + appCode);
+					if (flag) {
+//						log.info("用户"+userId+"在"+appCode+"已发放过宝券奖励");
+						continue;// 如果这个用户,在这个游戏已经发过,就跳过
+					}
+					// 获取昨天用户是否是会员
+					String memberLevel = queryYesterdayVipFromStore(userId);
+					for (StoreAwardConfEntity storeAwardConfEntity : awardList) {
+						if (StringUtils.isEmpty(memberLevel)) {
+							// 用户非会员
+							if (storeAwardConfEntity.getIdMember() == 0) {
+								if (bqAutoSendEntity.getAccountAmount().compareTo(storeAwardConfEntity.getAccountAmount()) == 1||bqAutoSendEntity.getAccountAmount().compareTo(storeAwardConfEntity.getAccountAmount()) == 0) {
+									// 发奖
+									doSendBq(bqAutoSendEntity, storeAwardConfEntity);
+									break;
+								}
+							}
+						} else {
+                            Integer awardMemberLevelId = storeAwardConfEntity.getMemberLevelId();
+                            // 用户是会员
+//                            log.info("用户:"+userId+"游戏:"+appCode+"||"+storeAwardConfEntity.getIdMember()+"||"+awardMemberLevelId+"||"+memberLevel);
+                            if (storeAwardConfEntity.getIdMember() == 0 || (storeAwardConfEntity.getIdMember() == 1&&awardMemberLevelId!=null&Integer.valueOf(memberLevel) >= awardMemberLevelId)) {
+                                if (bqAutoSendEntity.getAccountAmount().compareTo(storeAwardConfEntity.getAccountAmount()) == 1||bqAutoSendEntity.getAccountAmount().compareTo(storeAwardConfEntity.getAccountAmount()) == 0) {
+                                    // 发奖
+                                    doSendBq(bqAutoSendEntity, storeAwardConfEntity);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+				}
+			}
+
+		}
+	}
+
+	/**
+	 * 发宝券,并记录
+	* @Title: doSendBq 
+	* @Description: TODO(这里用一句话描述这个方法的作用) 
+	* @param  @param entity
+	* @param  @param awardConf
+	* @return void    返回类型 
+	* @throws
+	 */
+	private void doSendBq(BqAutoSendEntity entity, StoreAwardConfEntity awardConf) {
+		BigDecimal num = awardConf.getBqAward();
+		BigDecimal costQbb = entity.getAccountAmount();
+		// 生成主键id，若id存在，则重新生成
+		String id = GenOrderCode.next();
+		int count = autoSendBqMapper.getTransConsumeById(id);
+		//发送宝券结果
+		boolean result=false;
+		while (count > 0) {
+			id = GenOrderCode.next();
+			count = autoSendBqMapper.getTransConsumeById(id);
+		}
+		entity.setId(id); // 生成唯一主键
+		entity.setStatus(SendBqStatusEnum.AUTO_SEND_NO.getStatus());
+		entity.setBqAward(num);
+		entity.setBizType(BIZ_TYPE);
+
+		// 符合赠送宝券条件 同步宝券系统
+		if (num.compareTo(new BigDecimal(0)) == 1) {
+			// 业务摘要
+			StringBuffer bizDesc = new StringBuffer();
+			bizDesc.append("<").append(entity.getAppName()).append(">消费").append(costQbb.intValue()).append("钱宝币赠送").append(num.intValue()).append("钱宝券");
+			entity.setBizDesc(bizDesc.toString());
+
+			result= rechargeFanquan(entity);
+			bizDesc.append("(活动:").append(awardConf.getActivityName()).append(")");
+			entity.setBizDesc(bizDesc.toString());
+		}
+		try {
+			if (result) {
+				// 储存到redis当前游戏当前用户只发放一次满足活动的奖励,避免重复发放
+				redisUtil.hset(RedisUtil.REDIS_HASH_KEY_HAS_SEND_BQ_USER, entity.getPayUserId() + entity.getAppCode(), "sended");
+				redisUtil.expire(RedisUtil.REDIS_HASH_KEY_HAS_SEND_BQ_USER, 3600 * 6);
+				//发送IM消息通知用户
+				PubMessageReqVo pubMessageReqVo = new PubMessageReqVo();
+				try {
+					pubMessageReqVo.setAppId("1002");
+					pubMessageReqVo.setCtt("1");
+					pubMessageReqVo.setMessage("尊敬的钱宝网会员，恭喜您在宝玩通过充值<" + entity.getAppName() + ">游戏获取" + num.intValue() + "宝劵");
+					pubMessageReqVo.setSubType("1");
+					pubMessageReqVo.setToid(entity.getPayUserId());
+					pubMessage(pubMessageReqVo);
+				} catch (Exception e) {
+					log.error("发送IM消息失败:{}", e);
+				}
+			}
+			// 插入数据库
+			if (num.compareTo(new BigDecimal(0)) == 1) {
+				autoSendBqMapper.insertSumTrans(entity);
+			}
+		} catch (Exception e) {
+			log.error("插入数据失败:{}", e);
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 应用规则Map中获取相应的规则
+	 * @param appRuleMap
+	 * @param appCode
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	private List<StoreAwardConfEntity> getRule(Map<String, Object> appRuleMap, String appCode) {
+		Object ruleObj = appRuleMap.get(appCode);
+		List<StoreAwardConfEntity> list = null;
+		if (ruleObj == null) { // Map中不存在，则补偿
+			String transDate = DateUtil.getCurLastDay().replaceAll("-", "");
+			list = storeAwardConfService.queryConf(transDate, appCode);
+			appRuleMap.put(appCode, list);
+		} else {
+			list = (List<StoreAwardConfEntity>) ruleObj;
+		}
+		// 按vip等级由高到低进行排序
+		Comparator<StoreAwardConfEntity> comparator = new Comparator<StoreAwardConfEntity>() {
+			public int compare(StoreAwardConfEntity s1, StoreAwardConfEntity s2) {
+				if (s1.getMemberLevelId() == null && s2.getMemberLevelId() == null) {
+					return 0;
+				} else if (s1.getMemberLevelId() == null && s2.getMemberLevelId() != null) {
+					return 1;
+				} else if (s1.getMemberLevelId() != null && s2.getMemberLevelId() == null) {
+					return -1;
+				} else if (s1.getMemberLevelId() > s2.getMemberLevelId()) {
+					return -1;
+				} else {
+					return 0;
+				}
+			}
+		};
+        if(list!=null) {
+            Collections.sort(list, comparator);
+        }
+		return list;
+	}
+
+	/**
+	 * 发送宝券系统
+	 */
+	private boolean sendToBqSystem(BqAutoSendEntity entity) {
+
+		log.info("同步数据至宝券系统 start..");
+		List<NameValuePair> payPairs = new ArrayList<NameValuePair>();
+		payPairs.add(new BasicNameValuePair("userId", entity.getPayUserId()));
+		payPairs.add(new BasicNameValuePair("bizType", String.valueOf(entity.getBizType())));
+		payPairs.add(new BasicNameValuePair("num", String.valueOf(entity.getBqAward().intValue())));
+		payPairs.add(new BasicNameValuePair("bizId", "app1_" + String.valueOf(entity.getId())));
+		payPairs.add(new BasicNameValuePair("bizDesc", entity.getBizDesc()));
+		// payPairs.add(new BasicNameValuePair("type",entity.getBqType()));
+		// payPairs.add(new
+		// BasicNameValuePair("merchantType",entity.getMerchantType()));
+
+		boolean success = false;
+
+		try {
+			log.info("自动发放宝券同步宝券系统参数:", JSON.toJSON(payPairs));
+			String response = ApiConnector.post(domainConfig.getString("quan.in.url"), payPairs);
+			JSONObject payJson = JSON.parseObject(response);
+			log.info("自动发放宝券同步宝券系统结果:" + response);
+			String code = payJson.getString("code");
+			if ("1000".equals(code)) {
+				entity.setStatus(SendBqStatusEnum.AUTO_SEND_SUCCESS.getStatus());
+				success = true;
+			} else {
+				entity.setStatus(SendBqStatusEnum.AUTO_SEND_FAIL.getStatus());
+			}
+			entity.setReturnCode(code);
+			entity.setReturnMsg(payJson.getString("message"));
+		} catch (Exception e) {
+			entity.setStatus(SendBqStatusEnum.AUTO_SEND_ERROR.getStatus());
+			log.error("发送宝券系统失败:{}", e);
+			// 防止宝券系统插入成功，返回超时情况
+			// rollbackToBqSystem(entity);
+		}
+
+		log.info("同步数据至宝券系统  end..");
+
+		return success;
+	}
+
+
+    /**
+     * 会员充值返券（P090301)
+     */
+    private boolean rechargeFanquan(BqAutoSendEntity entity) {
+        log.info("同步数据至商肃支付 start..");
+        boolean success = false;
+        try {
+            PersonTradeReqInfo tradeReqInfo = new PersonTradeReqInfo();
+            tradeReqInfo.setSignType("RSA");
+            tradeReqInfo.setInputCharset("UTF-8");
+            tradeReqInfo.setGroupCode("G009");
+            tradeReqInfo.setUserId(entity.getPayUserId());
+            tradeReqInfo.setBusiType("P090301"); //会员充值返券
+            tradeReqInfo.setTradeTime(DateUtils.getCurDateFormatStr("yyyyMMddHHmmss"));
+            tradeReqInfo.setOutTradeNo(entity.getId());
+            tradeReqInfo.setFeeAmount(0L);
+            tradeReqInfo.setTradeDesc(Base64.encodeBase64URLSafeString(entity.getBizDesc().getBytes("UTF-8")));
+            tradeReqInfo.setTerminal("PC");
+
+            List<TradeItem> list = new ArrayList<TradeItem>();
+            TradeItem tradeItem1 = new TradeItem();
+            tradeItem1.setItemTradeNo(entity.getId());
+            tradeItem1.setPayType("2");// 宝劵
+            tradeItem1.setAmount(entity.getBqAward().longValue());
+            tradeItem1.setItemBusiType("P090301");
+            list.add(tradeItem1);
+            tradeReqInfo.setTradeItems(list);
+            log.info("自动发放宝券调商肃支付参数:{}", JSON.toJSON(tradeReqInfo));
+            String requestUrl = domainConfig.getString("shangsu.personal.business");
+            String rsaPrivateKey = domainConfig.getString("shangsu.rsa.private.key");
+            PersonTraceResp personTraceResp = YanSuCommonUtil.personalBusiness(tradeReqInfo, requestUrl, rsaPrivateKey);
+            log.info("自动发放宝券调商肃支付结果:{}" + JSON.toJSONString(personTraceResp));
+            if (personTraceResp == null) {
+                entity.setStatus(SendBqStatusEnum.AUTO_SEND_FAIL.getStatus());
+                return false;
+            }
+            if ("100000".equals(personTraceResp.getRespCode())) {
+                entity.setStatus(SendBqStatusEnum.AUTO_SEND_SUCCESS.getStatus());
+                success = true;
+            } else {
+                entity.setStatus(SendBqStatusEnum.AUTO_SEND_FAIL.getStatus());
+            }
+            entity.setReturnCode(personTraceResp.getRespCode());
+            entity.setReturnMsg(personTraceResp.getRespMsg());
+            entity.setPayTradeNo(personTraceResp.getPayTradeNo());
+        } catch (Exception e) {
+            entity.setStatus(SendBqStatusEnum.AUTO_SEND_ERROR.getStatus());
+            log.error("发送宝券系统失败:{}", e);
+        }
+        log.info("同步数据至宝券系统  end..");
+        return success;
+    }
+
+	/**
+	 * 查询昨日应用市场会员等级
+	 * @param payUserId
+	 */
+	private String queryYesterdayVipFromStore(String payUserId) {
+        try {
+            List<NameValuePair> paramsList = new ArrayList<NameValuePair>();
+            paramsList.add(new BasicNameValuePair("userId", String.valueOf(payUserId)));
+            paramsList.add(new BasicNameValuePair("queryDate", DateUtil.getCurDate()));
+            String vipLevelUrl = domainConfig.getString("store.yesterday.viplevel.url");
+            log.info("查询用户{}昨日会员等级URL:{}", payUserId, vipLevelUrl);
+            String responseBody = ApiConnector.post(vipLevelUrl, paramsList);
+            log.info("查询用户{}昨日会员等级返回信息:{}", payUserId, responseBody);
+            if (StringUtils.isNotEmpty(responseBody)) {
+                JSONObject jObj = JSONObject.parseObject(responseBody);
+                if (jObj.getInteger("responseCode") == 1000) {
+                    JSONObject dataObj = jObj.getJSONObject("data");
+                    if (dataObj != null) {
+                        String memberLevel = dataObj.getString("memberLevel");
+                        return memberLevel;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.info("获取{}昨日会员等级信息以异常:{}", payUserId,e);
+        }
+        log.info("{}昨日会员等级信息为空", payUserId);
+		return null;
+	}
+
+	/**
+	 * 发送IM消息
+	* @Title: pubMessage 
+	* @Description: TODO(这里用一句话描述这个方法的作用) 
+	* @param  @param pubMessageReqVo
+	* @return void    返回类型 
+	* @throws
+	 */
+	public void pubMessage(PubMessageReqVo pubMessageReqVo) {
+		log.info("发送消息接口请求start...");
+		List<NameValuePair> payPairs = new ArrayList<NameValuePair>();
+		payPairs.add(new BasicNameValuePair("appid", pubMessageReqVo.getAppId()));
+		payPairs.add(new BasicNameValuePair("token", domainConfig.getString("pub.message.token")));
+		payPairs.add(new BasicNameValuePair("fromid", domainConfig.getString("pub.message.fromid")));
+		payPairs.add(new BasicNameValuePair("app_token", domainConfig.getString("pub.message.app.token")));
+		payPairs.add(new BasicNameValuePair("ctt", pubMessageReqVo.getCtt()));
+		payPairs.add(new BasicNameValuePair("subtype", pubMessageReqVo.getSubType()));
+		payPairs.add(new BasicNameValuePair("toid", pubMessageReqVo.getToid()));
+		payPairs.add(new BasicNameValuePair("message", pubMessageReqVo.getMessage()));
+		JSONObject json = null;
+
+		log.info("发送消息接口请求接口参数:" + payPairs.toString());
+		try {
+			String response = ApiConnector.post(domainConfig.getString("pub.message.url"), payPairs);
+			log.info(response);
+			json = JSONObject.parseObject(response);
+			JSONObject meta = JSONObject.parseObject(json.getString("meta"));
+			Integer code = meta.getInteger("code");
+			if (code == 200) {
+				log.info("发送消息接口请求成功");
+			}
+		} catch (Exception e) {
+			log.error("发送消息接口请求失败:{}", e.getMessage());
+			e.printStackTrace();
+		}
+		log.info("发送消息接口请求 end.");
+	}
+
+	public static void main(String[] args) {
+		List<Integer> list = new ArrayList<Integer>();
+		list.add(null);
+		list.add(4);
+//		list.add(3);
+//		list.add(null);
+//		list.add(10);
+//		list.add(4);
+//		list.add(3);
+//		list.add(null);
+//		list.add(null);
+		Comparator<Integer> comparator = new Comparator<Integer>() {
+			public int compare(Integer s1, Integer s2) {
+				if (s1 == null && s2 == null) {
+					return 0;
+				} else if (s1 == null && s2 != null) {
+					return 1;
+				} else if (s1 != null && s2 == null) {
+					return -1;
+				} else if (s1 > s2) {
+					return -1;
+				} else {
+					return 0;
+				}
+			}
+		};
+		Collections.sort(list, comparator);
+
+		for (Integer i : list) {
+			System.out.println(i);
+		}
+	}
+}

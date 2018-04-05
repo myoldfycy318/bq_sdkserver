@@ -1,0 +1,17 @@
+package com.qbao.sdk.server.service.login;
+
+import com.alibaba.fastjson.JSONObject;
+
+public interface ThridRequestService {
+
+	JSONObject loadUserInfo(String username);
+
+	/**
+	 * 获取登录用户cas信息
+	 * 
+	 * @param loginName
+	 *            用户登录名
+	 * @return
+	 */
+	JSONObject getCasUser(String loginName,String password);
+}

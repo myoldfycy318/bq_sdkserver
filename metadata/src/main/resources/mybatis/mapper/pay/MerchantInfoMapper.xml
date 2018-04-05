@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qbao.sdk.server.metadata.dao.mapper.pay.MerchantInfoMapper">
+
+	
+	<!--开放平台商户信息-->
+	<resultMap type="com.qbao.sdk.server.metadata.entity.pay.OpenMerchantEntity" id="OpenMerchantResultMap">
+		<id property="appId" jdbcType="INTEGER" column="app_id" />
+		<result property="merchantCode" jdbcType="VARCHAR" column="merchant_code" />
+		<result property="merchantName" jdbcType="VARCHAR" column="merchant_name" />
+		<result property="appCode" jdbcType="VARCHAR" column="app_code" />
+		<result property="appName" jdbcType="VARCHAR" column="app_name" />
+		<result property="publicKey" jdbcType="VARCHAR" column="public_key" />
+		<result property="privateKey" jdbcType="VARCHAR" column="private_key" />
+		<result property="appKey" jdbcType="VARCHAR" column="app_key" />
+		<result property="loginRedirectUrl" jdbcType="VARCHAR" column="login_redirect_url" />
+		<result property="whiteIp" jdbcType="VARCHAR" column="white_ip" />
+		<result property="merchantUserId" jdbcType="INTEGER" column="merchant_user_id" />
+		<result property="status" jdbcType="INTEGER" column="status" />
+		<result property="createDate" jdbcType="TIMESTAMP" column="create_time" />
+		<result property="updateDate" jdbcType="TIMESTAMP" column="update_time" />
+	</resultMap>
+	
+	<!-- 根据钱宝账户ID和appCode查询APP -->
+	<select id="queryMerchantByUserId" resultMap="OpenMerchantResultMap" >
+	    SELECT
+			app_id,
+			merchant_code,
+			merchant_name,
+			app_code,
+			app_name,
+			public_key,
+			private_key,
+			app_key,
+			login_redirect_url,
+			white_ip,
+			merchant_user_id,
+			`status`,
+			create_time,
+			update_time
+		FROM
+			open_merchant
+		WHERE
+			`status` = 1
+		AND merchant_user_id = #{merchantUserId,jdbcType=VARCHAR}
+		AND app_code = #{appCode,jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 查询所有APPcode -->
+	<select id="queryAllAppCode" resultType="java.lang.String" >
+	    SELECT DISTINCT
+			app_code
+		FROM
+			open_merchant
+		WHERE
+			`status` = 1
+	</select>
+	
+	<!--插入开放平台商户信息-->
+	<insert id="insertOpenMerchant" parameterType="com.qbao.sdk.server.metadata.entity.pay.OpenMerchantEntity">
+	    insert into open_merchant(
+    			merchant_code
+    			,merchant_name
+    			,app_code
+    			,app_name
+    			,public_key
+    			,private_key
+    			,app_key
+    			,login_redirect_url
+    			,white_ip
+    			,merchant_user_id
+    			,status
+    			,create_time
+    			,update_time
+    		) values (
+    			 #{entity.merchantCode,jdbcType=VARCHAR}
+    			,#{entity.merchantName,jdbcType=VARCHAR}
+    			,#{entity.appCode,jdbcType=VARCHAR}
+    			,#{entity.appName,jdbcType=VARCHAR}
+    			,#{entity.publicKey,jdbcType=VARCHAR}
+    			,#{entity.privateKey,jdbcType=VARCHAR}
+    			,#{entity.appKey,jdbcType=CHAR}
+    			,#{entity.loginRedirectUrl,jdbcType=DECIMAL}
+    			,#{entity.whiteIp,jdbcType=VARCHAR}
+    			,#{entity.merchantUserId,jdbcType=INTEGER}
+    			,#{entity.status,jdbcType=INTEGER}
+    			,now()
+    			,now()
+    	    ) 
+  	</insert>
+  	
+  	<!-- 删除商户信息-->
+  	<delete id="deleteMerchantByAppCode">
+		delete from  
+			open_merchant
+		where
+			app_code = #{appCode, jdbcType=VARCHAR}
+	</delete>
+	
+	<!--获取开放平台商户信息-->
+	<select id="getOpenMerchantEntityByAppCode" resultMap="OpenMerchantResultMap">
+		SELECT
+			app_id,merchant_code,merchant_name,app_code,app_name,public_key,private_key,app_key,
+			login_redirect_url,white_ip,merchant_user_id,status,create_time,update_time
+		FROM 
+			open_merchant
+		WHERE
+			app_code = #{appCode,jdbcType=VARCHAR}
+	</select>
+
+	<select id="getAllApp" resultMap="OpenMerchantResultMap">
+		SELECT
+			app_id,merchant_code,merchant_name,app_code,app_name,public_key,private_key,app_key,
+			login_redirect_url,white_ip,merchant_user_id,status,create_time,update_time
+		FROM
+			open_merchant where status=1
+	</select>
+ 
+</mapper>

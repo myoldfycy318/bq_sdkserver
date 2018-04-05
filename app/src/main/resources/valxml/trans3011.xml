@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fields>
+	<field attr="orderNo">
+		<text>支付流水号</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>40001</code>
+		</check-null>
+		<check-length>
+			<max-length>30</max-length>
+			<code>40002</code>
+		</check-length>
+		<check-exp>
+			<exp>^[1-9]\d*$</exp>
+			<code>40002</code>
+		</check-exp>
+	</field>
+	
+	<field attr="appCode">
+		<text>应用编码</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>40019</code>
+		</check-null>
+		<check-length>
+			<max-length>8</max-length>
+			<code>40020</code>
+		</check-length>
+		<check-exp>
+			<exp>^A[0-9]{7}$</exp>
+			<code>40020</code>
+		</check-exp>
+	</field>
+	
+	<field attr="transDate">
+		<text>交易日期</text>
+		<check-null>
+			<allow-null>1</allow-null>
+			<code>60001</code>
+		</check-null>
+		<check-length>
+			<max-length>8</max-length>
+			<code>60002</code>
+		</check-length>
+		<check-exp>
+			<exp>^((?:19|20)\d\d)(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])$</exp>
+			<code>60004</code>
+		</check-exp>
+	</field>
+	
+</fields>

@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.0.xsd">
+    
+    
+    <!-- 总管理类 如果将lazy-init='false'那么容器启动就会执行调度程序  -->
+    <bean id="startQuertz" lazy-init="false" autowire="no" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                 <ref bean="payAsyncNoticeTriggerBean"/>
+                 <ref bean="dayAsyncNoticeTriggerBean"/>
+                 <!-- <ref bean="weekAsyncNoticeTriggerBean"/> -->
+                 <ref bean="monthAsyncNoticeTriggerBean"/> 
+                 <ref bean="periodAsyncNoticeTriggerBean"/> 
+                 
+                 <!-- 日结月切流水开始 -->
+                 <ref bean="daySumTriggerBean" />
+                 <!--ref bean="pastDaySumTriggerBean" /-->
+                 
+                 
+                 <!-- 日结月切流水结束 -->               
+                 <ref bean="dayStatisticTriggerBean"/>
+                 <!--ref bean="onlineStatisticTriggerBean"/> -->
+                <!-- 留存率相关-->
+                <ref bean="userKeepRateTaskTriggerBean"/>
+                <!--ref bean="usrHisDataTriggerBean"/-->
+                <!-- 留存率结束-->
+                <ref bean="autoSendBqTriggerBean"/>
+            </list>
+        </property>
+    </bean>
+    
+    <bean id="payAsyncNotice" class="com.qbao.sdk.server.job.PayAsyncNoticeTask"></bean>
+    <!-- 定义调用对象和调用对象的方法 -->
+    <bean id="payAsyncNoticeFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="payAsyncNotice"/>
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>payAsyncNotice</value>
+        </property>
+    </bean>
+    <!-- 定义触发时间 -->
+    <bean id="payAsyncNoticeTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="payAsyncNoticeFactoryBean"/>
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+        	 <!-- 每1min一次调度 -->
+            <value>0 0/1 * * * ?</value>
+        </property>
+    </bean>
+    
+    <bean id="TurntableAscyNotice" class="com.qbao.sdk.server.job.TurntableAscyNoticeTask"></bean>
+    <!-- 定义调用对象和调用对象的方法 -->
+    <bean id="dayAscyNoticeFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="TurntableAscyNotice"/>
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>asyncNoticeAday</value>
+        </property>
+    </bean>
+    <!-- 定义触发时间 -->
+    <bean id="dayAsyncNoticeTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="dayAscyNoticeFactoryBean"/>
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+        	 <!-- 每天2:00一次调度 -->
+           <value>0 0 2 * * ?</value>
+        </property>
+    </bean>
+    
+    <!-- 定义调用对象和调用对象的方法 -->
+    <bean id="weekAscyNoticeFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="TurntableAscyNotice"/>
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>asyncNoticeAweek</value>
+        </property>
+    </bean>
+    <!-- 定义触发时间 -->
+    <bean id="weekAsyncNoticeTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="weekAscyNoticeFactoryBean"/>
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+        	 <!-- 每周的第一天2:00一次调度 -->
+            <value>0 0 2 ? * MON</value>
+        </property>
+    </bean>
+    
+     <!-- 定义调用对象和调用对象的方法 -->
+    <bean id="monthAscyNoticeFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="TurntableAscyNotice"/>
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>asyncNoticeAmonth</value>
+        </property>
+    </bean>
+    <!-- 定义触发时间 -->
+    <bean id="monthAsyncNoticeTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="monthAscyNoticeFactoryBean"/>
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+        	 <!-- 每月的第一天2:00一次调度 -->
+            <value>0 0 2 1 * ?</value>
+        </property>
+    </bean>
+    
+    <!-- 定义调用对象和调用对象的方法 -->
+    <bean id="periodAscyNoticeFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="TurntableAscyNotice"/>
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>asyncNoticeAperiod</value>
+        </property>
+    </bean>
+    <!-- 定义触发时间 -->
+    <bean id="periodAsyncNoticeTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="periodAscyNoticeFactoryBean"/>
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+        	 <!-- 每天2:00一次调度 -->
+            <value>0 0 2 * * ?</value>
+        </property>
+    </bean>
+    
+    <!-- 宝券自动发放 -->
+    <bean id="autoSendBq" class="com.qbao.sdk.server.job.AutoSendBqTask"></bean>
+    <!-- 定义调用对象和调用对象的方法 -->
+    <bean id="autoSendBqFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="autoSendBq"/>
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>sumConsume</value>
+        </property>
+    </bean>
+    <!-- 定义触发时间 -->
+    <bean id="autoSendBqTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="autoSendBqFactoryBean"/>
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+            <value>0 0 2 * * ?</value>
+        </property>
+    </bean>
+    
+    <!-- 数据统计功能 -->
+    <bean id="dayStatisticTask" class="com.qbao.sdk.server.job.SdkUserStatisticTask"></bean>
+    <!-- 定义调用对象和调用对象的方法 -->
+    <bean id="dayStatisticFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="dayStatisticTask"/>
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>userStatistic</value>
+        </property>
+    </bean>
+    <!-- 定义触发时间 -->
+    <bean id="dayStatisticTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="dayStatisticFactoryBean"/>
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+        	 <!-- 每天凌晨执行一次 -->
+            <value>0 0 21 * * ?</value>
+        </property>
+    </bean>
+    
+    <!-- 上线统计数据初始化-->
+    <bean id="onlineStatisticFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject">
+            <ref bean="dayStatisticTask"/>
+        </property>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod">
+            <value>onlineStatisticInitial</value>
+        </property>
+    </bean>
+    <!-- 定义触发时间 -->
+    <bean id="onlineStatisticTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="onlineStatisticFactoryBean"/>
+        </property>
+        <!-- cron表达式 -->
+        <property name="cronExpression">
+        	 <!-- 只执行一次 -->
+            <value>0 0 16 * * ? 2016</value>
+        </property>
+    </bean>
+    
+    <!-- 日切月结流水开始 -->
+    <!-- daySum start -->
+    <bean id="dayAndMonthSum" class="com.qbao.sdk.server.job.DayAndMonthSumTask"></bean>
+    <bean id="daySumFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject">
+            <ref bean="dayAndMonthSum"/>
+        </property>
+        <property name="targetMethod">
+            <value>process2DaySum</value>
+        </property>
+    </bean>
+    <bean id="daySumTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="daySumFactoryBean"/>
+        </property>
+        <property name="cronExpression">
+        	<!-- 每天2:00一次调度 -->
+           <value>0 0 23 * * ?</value>
+        </property>
+    </bean>
+    
+    <!-- past daySum start -->
+    <bean id="pastDaySumFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject">
+            <ref bean="dayAndMonthSum"/>
+        </property>
+        <property name="targetMethod">
+            <value>processPastDaySum</value>
+        </property>
+    </bean>
+    <bean id="pastDaySumTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail">
+            <ref bean="pastDaySumFactoryBean"/>
+        </property>
+        <property name="cronExpression">
+        	<!-- 每天2:00一次调度 -->
+           <value>0 0 20 23 3 ? 2016</value>
+        </property>
+    </bean>
+	<!-- 日切月结流水结束 -->
+	<!--新增用户留存率-->
+    <bean id="userKeepRateTask" class="com.qbao.sdk.server.job.UserKeepRateTask"/>
+
+    <bean id="userKeepRateTaskFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject" ref="userKeepRateTask"/>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod" value="process"/>
+    </bean>
+
+    <bean id="userKeepRateTaskTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail" ref="userKeepRateTaskFactoryBean"/>
+        <!-- cron表达式 -->
+        <property name="cronExpression" value="0 0 23 * * ?"/>
+    </bean>
+
+    <!-- 留存率数据初始化-->
+    <bean id="historyDataProcessTask" class="com.qbao.sdk.server.job.HistoryDataProcessTask"/>
+	<!--留存率数据初始化-->
+    <bean id="usrHisDataFactoryBean" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!-- 调用的类 -->
+        <property name="targetObject" ref="historyDataProcessTask"/>
+        <!-- 调用类中的方法 -->
+        <property name="targetMethod" value="statisticHistoryData"/>
+    </bean>
+
+    <bean id="usrHisDataTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerBean">
+        <property name="jobDetail" ref="usrHisDataFactoryBean"/>
+        <!-- cron表达式 -->
+        <property name="cronExpression" value="0 0 20 29 3 ? 2016"/>
+    </bean>
+</beans>

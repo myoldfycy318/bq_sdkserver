@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.qbao.sdk.server.metadata.dao.mapper.login.AuthorizationAccessTokenMapper">
+
+	<resultMap
+		type="com.qbao.sdk.server.metadata.entity.login.AuthorizationAccessTokenEntity"
+		id="authorizationAccessTokenMap">
+		<result property="id" column="id" />
+		<result property="clientId" column="client_id" />
+		<result property="createTime" column="create_time" />
+		<result property="accessToken" column="access_token" />
+		<result property="userName" column="user_name" />
+		<result property="userId" column="user_id" />
+		<result property="expiration" column="expiration" />
+		<result property="mobile" column="mobile" />
+		<result property="accessType" column="access_type" />
+	</resultMap>
+
+	<select id="getAccessToken"
+		parameterType="com.qbao.sdk.server.metadata.entity.login.AuthorizationAccessTokenEntity"
+		resultMap="authorizationAccessTokenMap">
+		select
+		id,client_id,create_time,access_token,user_name,user_Id,expiration
+		,mobile,access_type
+		from authorization_access_token
+		where client_id = #{clientId}
+		and user_name = #{userName}
+		and access_type = #{accessType}
+	</select>
+
+	<delete id="remove" parameterType="long">
+		delete from
+		authorization_access_token where id = #{id}
+	</delete>
+
+	<insert id="add"
+		parameterType="com.qbao.sdk.server.metadata.entity.login.AuthorizationAccessTokenEntity">
+        <![CDATA[ 
+      	insert into authorization_access_token
+      	(create_time,client_id,access_token,user_name,expiration,user_Id,mobile,access_type) 
+      	  values(#{createTime}, #{clientId},#{accessToken}, 
+      	  #{userName}, #{expiration}, #{userId}, #{mobile},#{accessType})
+       ]]>
+	</insert>
+
+	<select id="getAccessTokenById" parameterType="string"
+		resultMap="authorizationAccessTokenMap">
+		select
+		id,client_id,create_time,access_token,user_name,user_Id,expiration,mobile,access_type
+		from authorization_access_token
+		where access_token = #{accessToken}
+	</select>
+
+</mapper>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qbao.sdk.server.metadata.dao.mapper.TestMapper">
+	
+	<resultMap type="com.qbao.sdk.server.metadata.entity.TestEntity" id="TestResultMap">
+		<id property="id" jdbcType="BIGINT" column="id" />
+		<result property="username" jdbcType="VARCHAR" column="username" />
+	</resultMap>
+	
+	<!--新增商户权限-->
+	<insert id="add">
+	   <selectKey resultType="long" order="AFTER" keyProperty="id">
+			SELECT LAST_INSERT_ID() AS id
+		</selectKey>
+		INSERT INTO sdk_test(username) VALUES
+		(#{username})
+  	</insert>
+
+</mapper>

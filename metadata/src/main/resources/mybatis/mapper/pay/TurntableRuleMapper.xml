@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qbao.sdk.server.metadata.dao.mapper.pay.TurntableRuleMapper">
+	<resultMap type="com.qbao.sdk.server.metadata.entity.pay.TurntableRuleEntity" id="resultMap">
+		<id property="ruleId" jdbcType="INTEGER" column="rule_id" />
+		<result property="id" jdbcType="INTEGER" column="id" />   
+		<result property="type" jdbcType="TINYINT" column="type" />   
+		<result property="name" jdbcType="VARCHAR" column="name" />   
+		<result property="startTime" jdbcType="TIMESTAMP" column="start_time" />  
+		<result property="endTime" jdbcType="TIMESTAMP" column="end_time" />  
+		<result property="number" jdbcType="INTEGER" column="number" />  
+		<result property="rechargeType" jdbcType="TINYINT" column="recharge_type" />  
+		<result property="rechargeStartTime" jdbcType="TIMESTAMP" column="recharge_start_time" />  
+		<result property="rechargeEndTime" jdbcType="TIMESTAMP" column="recharge_end_time" />  
+		<result property="rechargeGameIds" jdbcType="VARCHAR" column="recharge_game_ids" />  
+		<result property="rechargeCondition" jdbcType="TINYINT" column="recharge_condition" />  
+		<result property="rechargeCoinAmount" jdbcType="DECIMAL" column="recharge_coin_amount" />  
+		<result property="rechargeBqAmount" jdbcType="DECIMAL" column="recharge_bq_amount" />  
+		<result property="delFlag" jdbcType="TINYINT" column="del_flag" />  
+		<result property="createTime" jdbcType="TIMESTAMP" column="create_time" />  
+		<result property="updateTime" jdbcType="TIMESTAMP" column="update_time" />  
+	
+	</resultMap>
+	
+	<sql id="Base_Column_List">
+		rule_id,
+		 id,
+		name,
+		type,
+		start_time,
+		end_time,
+		recharge_type,
+		recharge_start_time,
+		recharge_end_time,
+		recharge_game_ids,
+		recharge_condition,
+		recharge_coin_amount,
+		recharge_bq_amount,
+		number,
+		del_flag,
+		create_time,
+		update_time
+	
+	</sql>
+	<insert id="insertTurntableRule" parameterType="com.qbao.sdk.server.metadata.entity.pay.TurntableRuleEntity">
+	
+		INSERT INTO 
+			store_turntable_rule(
+			id,
+			name,
+			type,
+			start_time,
+			end_time,
+			recharge_type,
+			recharge_start_time,
+			recharge_end_time,
+			recharge_game_ids,
+			recharge_condition,
+			recharge_coin_amount,
+			recharge_bq_amount,
+			number,
+			create_time,
+			update_time)
+		VALUES
+		<foreach collection="entities" item="entity" separator=",">
+			(#{entity.id},
+			#{entity.name},
+			0,
+			#{entity.startTime},
+			#{entity.endTime},
+			#{entity.rechargeType},
+			#{entity.rechargeStartTime},
+			#{entity.rechargeEndTime},
+			#{entity.rechargeGameIds},
+			#{entity.rechargeCondition},
+			#{entity.rechargeCoinAmount},
+			#{entity.rechargeBqAmount},
+			#{entity.number},
+			now(),
+			now())
+
+		</foreach>
+	
+	</insert>
+	
+	<update id="deleteTurntableRuleById">
+		update 
+			store_turntable_rule
+		set
+			del_flag = 1
+		where 
+			id = #{id}
+	</update>
+
+	<select id="selectEntityById" resultMap="resultMap">
+		select
+			<include refid="Base_Column_List" />
+		from 
+			store_turntable_rule
+		where 
+			del_flag = 0
+		and
+			id = #{id}
+	</select>
+	
+	<!-- 查询时间范围包含某天的规则(每日) -->
+	<select id="getRulesByDay" resultMap="resultMap">
+		select 
+			<include refid="Base_Column_List" />
+		from 
+			store_turntable_rule
+		where 
+			del_flag = 0
+		and
+			recharge_type = 1
+		and
+			DATE_FORMAT(start_time,'%Y%m%d') &lt;= #{date}
+		and 
+			DATE_FORMAT(end_time,'%Y%m%d') &gt;= #{date}
+	
+	</select>
+	<!-- 查询单笔充值规则 -->
+	<select id="getRulesBySingle" resultMap="resultMap">
+		select 
+			<include refid="Base_Column_List" />
+		from 
+			store_turntable_rule
+		where 
+			del_flag = 0
+		and
+			recharge_type = 0
+		and
+			recharge_game_ids = #{appCode}
+		and 
+			end_time &gt;= #{date}	
+		and
+			start_time &lt;= #{date}
+	</select>
+	
+	<!-- 查询时间范围包含某时间段的规则(每周、每月) -->
+	<select id="getRulesByPeriod" resultMap="resultMap">
+		select 
+			<include refid="Base_Column_List" />
+		from 
+			store_turntable_rule
+		where 
+			del_flag = 0
+		and
+			recharge_type = #{rechargeType}
+		and
+			DATE_FORMAT(end_time,'%Y%m%d') &gt;= #{startDate}
+		and 
+			DATE_FORMAT(start_time,'%Y%m%d') &lt;= #{endDate}
+
+	</select>
+	
+	<!-- 查询时间范围包含某时间段的规则(自定义时间) -->
+	<select id="getRulesByTimePeriod" resultMap="resultMap">
+		select 
+			<include refid="Base_Column_List" />
+		from 
+			store_turntable_rule
+		where 
+			del_flag = 0
+		and
+			recharge_type = #{rechargeType}
+		and
+			DATE_FORMAT(recharge_end_time,'%Y%m%d') = #{endDate}
+		
+	</select>
+
+</mapper>

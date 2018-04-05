@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="app" />
+        <module name="ba" />
+        <module name="common" />
+        <module name="metadata" />
+        <module name="service-app" />
+        <module name="service-ba" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="app" target="1.6" />
+      <module name="ba" target="1.6" />
+      <module name="common" target="1.6" />
+      <module name="metadata" target="1.6" />
+      <module name="parent" target="1.5" />
+      <module name="service-app" target="1.6" />
+      <module name="service-ba" target="1.6" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
